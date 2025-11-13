@@ -12,7 +12,7 @@ class LogCollector():
     def __init__(self, log_folder):
         self.log_folder = Path(log_folder)
 
-    def log_analysis(self, log_path: str) -> Tuple[Dict, List]:
+    def log_analysis(self, log_path: str, archiecture_name: str, debugger: bool) -> Tuple[Dict, List]:
         """
         Analysis a session from json log.
         """
@@ -28,6 +28,8 @@ class LogCollector():
 
             debugger_counter = 0
             total_errors = 0
+            val_errors = 0
+            wayang_errors = 0
             total_input_tokens = 0
             total_netto_input_tokens = 0
             total_output_tokens = 0
@@ -66,6 +68,12 @@ class LogCollector():
                     if instance in info["classes"]:
                         info["classes"][instance]["errors"] += 1
                         total_errors += 1
+                    
+                    if instance == "PlanValidator":
+                        val_errors += 1
+                    
+                    if instance == "Wayang":
+                        wayang_errors += 1
 
                 # Final status
                 if item["title"].startswith("Final:"):
@@ -133,8 +141,12 @@ class LogCollector():
             info["total_reasoning_tokens"] = total_reasoning_tokens
             info["total_tokens"] = total_total_tokens
             info["debug_itr"] = debugger_counter
-            info["total_erros"] = total_errors
+            info["errors_validation"] = val_errors
+            info["errors_wayang"] = wayang_errors
+            info["errors_total"] = total_errors
             info["dataflow"] = dataflow
+            info["architecture"] = archiecture_name
+            info["debugger"] = debugger
 
             return info, dataflow
         
