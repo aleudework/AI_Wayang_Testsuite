@@ -32,6 +32,7 @@ class PlanVisualisor():
                 plan = data["log"].get("plan", {})
                 if isinstance(plan, dict) and "operators" in plan:
                     operations = plan["operators"].copy() # Copy the operatins in the plan to the operation list
+                    break
 
         # Visualize plan
         self._visualize_wayang_plan(operations)
@@ -48,7 +49,7 @@ class PlanVisualisor():
         """
 
         # Get operations
-        operations = wayang_plan.get(operations, [])
+        operations = wayang_plan.get("operators", [])
 
         # Visualize plan
         self._visualize_wayang_plan(operations)
@@ -56,14 +57,14 @@ class PlanVisualisor():
 
     def _visualize_wayang_plan(self, operations: List, filename: str = "wayang_plan"):
         """
-        Visualizes Wayang Plan (picture) from a list of operations
+        Visualizes Wayang Plan (in PDF) from a list of operations
 
         Args:
             operations (List): List of operations / plan
             filename (str): Name of visualized plan picture / file
 
         Returns:
-            visualization of plan
+            visualization of Wayang plan
         """
 
         # Initialize graph

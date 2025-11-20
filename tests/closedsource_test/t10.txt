@@ -1,0 +1,39 @@
+USER_REQUEST: Create a plan that loads waiting list data for the month “2025-05”, and only have waiting list type that contains the word “Aktiv”, for these compute an contain the waiting list total for each organisation where the total is larger than 10000. For these organisations, the plan must get the total number of moveouts from 2025 and return the organisation name, the total in aktiv waiting list in 2025-05 and total of move outs in 2025. Output should be in textfile.
+SQL_QUERY:
+SELECT
+    o.name AS organisation_name,
+    aktiv.total_aktiv_waitlist,
+    mo.total_moveouts_2025
+FROM (
+    SELECT
+        f.organisation_id,
+        SUM(f.total) AS total_aktiv_waitlist
+    FROM factwaitinglists f
+    JOIN organisation o2
+        ON f.organisation_id = o2.organisation_id
+    WHERE f.year_month = '2025-05'
+      AND f.waiting_list_type ILIKE '%Aktiv%'
+    GROUP BY f.organisation_id
+    HAVING SUM(f.total) > 10000
+) aktiv
+JOIN organisation o
+    ON aktiv.organisation_id = o.organisation_id
+LEFT JOIN (
+    SELECT
+        organisation_id,
+        SUM(sum_of_move_outs) AS total_moveouts_2025
+    FROM factmoveouts
+    WHERE move_out_year = 2025
+    GROUP BY organisation_id
+) mo
+    ON aktiv.organisation_id = mo.organisation_id
+ORDER BY
+    mo.total_moveouts_2025 DESC;
+
+OUTPUT:
+organisation_name,total_aktiv_waitlist,total_moveouts_2025
+"Gladsaxe almennyttige Boligselskab",14787,447
+"Rødovre almennyttige Boligselskab",14151,405
+"Lyngby almennyttige Boligselskab",14276,357
+"Hovedstadens almennyttige Boligselskab",14223,337
+"Frederiksberg almennyttige Boligselskab",12940,7

@@ -1,5 +1,6 @@
-from utils.plan_visualisor import PlanVisualisor
+# Visualize a specific plan
 
+from utils.plan_visualisor import PlanVisualisor
 
 pl = PlanVisualisor()
 
