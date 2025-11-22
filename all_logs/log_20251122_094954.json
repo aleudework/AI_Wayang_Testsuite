@@ -1,0 +1,2061 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251122_094954",
+        "log": "Find the top 100 customers who have placed large-volume orders, where a large order is defined as an order whose total quantity exceeds 300. For each qualifying order, return the customer name, customer key, order key, order date, total price, and the total quantity of the order. Sort by total price desc. Output the results to a textfile.SQL_QUERY:"
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251122_094954",
+        "log": {
+            "model": "gpt-5",
+            "architecture": "Single",
+            "debugger": "True"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: BuilderAgent Information",
+        "timestamp": "20251122_095128",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 11209,
+                "input_tokens_details": {
+                    "cached_tokens": 11008
+                },
+                "output_tokens": 4999,
+                "output_tokens_details": {
+                    "reasoning_tokens": 3200
+                },
+                "total_tokens": 16208
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: BuilderAgent Raw Plan",
+        "timestamp": "20251122_095128",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_quantity"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).asInstanceOf[Double])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Double)) => t._1",
+                    "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Double)) => t._2 > 300.0",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "orders",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate",
+                        "o_totalprice"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], (r.getField(1).asInstanceOf[Int], r.getField(2), r.getField(3).asInstanceOf[Double]))",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 7,
+                    "input": [
+                        4,
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                    "thatKeyUdf": "(o: (Int, (Int, Any, Double))) => o._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Double), (Int, (Int, Any, Double)))) => { val qty = t._1._2; val o = t._2; val orderkey = o._1; val oc = o._2._1; val od = o._2._2; val price = o._2._3; (oc, (orderkey, od, price, qty)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 9,
+                    "input": [],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "customer",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).toString)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 11,
+                    "input": [
+                        8,
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, (Int, Any, Double, Double))) => t._1",
+                    "thatKeyUdf": "(c: (Int, String)) => c._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, (Int, Any, Double, Double)), (Int, String))) => { val custname = t._2._2; val custkey = t._2._1; val orderinfo = t._1._2; val orderkey = orderinfo._1; val orderdate = orderinfo._2; val price = orderinfo._3; val qty = orderinfo._4; (price, (custname, custkey, orderkey, orderdate, price, qty)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 13,
+                    "input": [
+                        12
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "sort",
+                    "keyUdf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => -t._1",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 14,
+                    "input": [
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => List(t)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "reduce",
+                    "keyUdf": null,
+                    "udf": "(a: List[(Double, (String, Int, Int, Any, Double, Double))], b: List[(Double, (String, Int, Int, Any, Double, Double))]) => (a ++ b).take(100)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [
+                        17
+                    ],
+                    "operatorName": "flatMap",
+                    "keyUdf": null,
+                    "udf": "(lst: List[(Double, (String, Int, Int, Any, Double, Double))]) => lst",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 17,
+                    "input": [
+                        16
+                    ],
+                    "output": [
+                        18
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => { val d = t._2; s\"${d._1} | ${d._2} | ${d._3} | ${d._4} | ${d._5} | ${d._6}\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 18,
+                    "input": [
+                        17
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Aggregate quantities per order from lineitem, filter >300, join with orders and customers, sort by price descending, cap to top 100 using a reduce of lists, then format and write to a text file."
+        }
+    },
+    {
+        "id": 5,
+        "title": "Class: PlanMapper Mapped plan finalized for execution",
+        "timestamp": "20251122_095128",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT l_orderkey, l_quantity FROM lineitem) as X",
+                            "columnNames": [
+                                "l_orderkey",
+                                "l_quantity"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).asInstanceOf[Double])"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Double)) => t._1",
+                            "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: (Int, Double)) => t._2 > 300.0"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT o_orderkey, o_custkey, o_orderdate, o_totalprice FROM orders) as X",
+                            "columnNames": [
+                                "o_orderkey",
+                                "o_custkey",
+                                "o_orderdate",
+                                "o_totalprice"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "unary",
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], (r.getField(1).asInstanceOf[Int], r.getField(2), r.getField(3).asInstanceOf[Double]))"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                            "thatKeyUdf": "(o: (Int, (Int, Any, Double))) => o._1"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Double), (Int, (Int, Any, Double)))) => { val qty = t._1._2; val o = t._2; val orderkey = o._1; val oc = o._2._1; val od = o._2._2; val price = o._2._3; (oc, (orderkey, od, price, qty)) }"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                            "columnNames": [
+                                "c_custkey",
+                                "c_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).toString)"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "binary",
+                        "input": [
+                            8,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, (Int, Any, Double, Double))) => t._1",
+                            "thatKeyUdf": "(c: (Int, String)) => c._1"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, (Int, Any, Double, Double)), (Int, String))) => { val custname = t._2._2; val custkey = t._2._1; val orderinfo = t._1._2; val orderkey = orderinfo._1; val orderdate = orderinfo._2; val price = orderinfo._3; val qty = orderinfo._4; (price, (custname, custkey, orderkey, orderdate, price, qty)) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "unary",
+                        "input": [
+                            12
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "sort",
+                        "data": {
+                            "keyUdf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => -t._1"
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "cat": "unary",
+                        "input": [
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => List(t)"
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "cat": "unary",
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: List[(Double, (String, Int, Int, Any, Double, Double))], b: List[(Double, (String, Int, Int, Any, Double, Double))]) => (a ++ b).take(100)"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "cat": "unary",
+                        "input": [
+                            15
+                        ],
+                        "output": [
+                            17
+                        ],
+                        "operatorName": "flatMap",
+                        "data": {
+                            "udf": "(lst: List[(Double, (String, Int, Int, Any, Double, Double))]) => lst"
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "cat": "unary",
+                        "input": [
+                            16
+                        ],
+                        "output": [
+                            18
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => { val d = t._2; s\"${d._1} | ${d._2} | ${d._3} | ${d._4} | ${d._5} | ${d._6}\" }"
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "cat": "output",
+                        "input": [
+                            17
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_095128.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251122_095128",
+        "log": ""
+    },
+    {
+        "id": 7,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_095131",
+        "log": ""
+    },
+    {
+        "id": 8,
+        "title": "Err: Wayang error. Plan executed unsucessful",
+        "timestamp": "20251122_095131",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaReduceBy[1->1, id=65efff5f]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException\n"
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251122_095131",
+        "log": ""
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: DebuggerAgent. Debug version 2 information",
+        "timestamp": "20251122_095152",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 6865,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 2826,
+                "output_tokens_details": {
+                    "reasoning_tokens": 896
+                },
+                "total_tokens": 9691
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: DebuggerAgent's thoughts, plan 2",
+        "timestamp": "20251122_095152",
+        "log": {
+            "version": 2,
+            "thoughts": "Fixed ClassCastException in ReduceBy by making the lineitem map (op 2) robust to JDBC types (e.g., java.math.BigDecimal/Long). It now normalizes l_orderkey to Int and l_quantity to Double, ensuring consistent (Int, Double) tuples for grouping and summation."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent: DebuggerAgent's plan: 2",
+        "timestamp": "20251122_095152",
+        "log": {
+            "version": 2,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "l_orderkey",
+                            "l_quantity"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val ok = r.getField(0) match { case i: Int => i case l: Long => l.toInt case bd: java.math.BigDecimal => bd.intValue case s: String => s.toInt case x => x.toString.toInt }; val qty = r.getField(1) match { case d: Double => d case f: Float => f.toDouble case i: Int => i.toDouble case l: Long => l.toDouble case bd: java.math.BigDecimal => bd.doubleValue case s: String => s.toDouble case x => x.toString.toDouble }; (ok, qty) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Double)) => t._1",
+                        "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Double)) => t._2 > 300.0",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "orders",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "o_orderkey",
+                            "o_custkey",
+                            "o_orderdate",
+                            "o_totalprice"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], (r.getField(1).asInstanceOf[Int], r.getField(2), r.getField(3).asInstanceOf[Double]))",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 7,
+                        "input": [
+                            4,
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                        "thatKeyUdf": "(o: (Int, (Int, Any, Double))) => o._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Double), (Int, (Int, Any, Double)))) => { val qty = t._1._2; val o = t._2; val orderkey = o._1; val oc = o._2._1; val od = o._2._2; val price = o._2._3; (oc, (orderkey, od, price, qty)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 9,
+                        "input": [],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "customer",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "c_custkey",
+                            "c_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).toString)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            8,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(t: (Int, (Int, Any, Double, Double))) => t._1",
+                        "thatKeyUdf": "(c: (Int, String)) => c._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, (Int, Any, Double, Double)), (Int, String))) => { val custname = t._2._2; val custkey = t._2._1; val orderinfo = t._1._2; val orderkey = orderinfo._1; val orderdate = orderinfo._2; val price = orderinfo._3; val qty = orderinfo._4; (price, (custname, custkey, orderkey, orderdate, price, qty)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "sort",
+                        "keyUdf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => -t._1",
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 14,
+                        "input": [
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => List(t)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: List[(Double, (String, Int, Int, Any, Double, Double))], b: List[(Double, (String, Int, Int, Any, Double, Double))]) => (a ++ b).take(100)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [
+                            17
+                        ],
+                        "operatorName": "flatMap",
+                        "keyUdf": null,
+                        "udf": "(lst: List[(Double, (String, Int, Int, Any, Double, Double))]) => lst",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 17,
+                        "input": [
+                            16
+                        ],
+                        "output": [
+                            18
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => { val d = t._2; s\"${d._1} | ${d._2} | ${d._3} | ${d._4} | ${d._5} | ${d._6}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 18,
+                        "input": [
+                            17
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Fixed ClassCastException in ReduceBy by making the lineitem map (op 2) robust to JDBC types (e.g., java.math.BigDecimal/Long). It now normalizes l_orderkey to Int and l_quantity to Double, ensuring consistent (Int, Double) tuples for grouping and summation."
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251122_095152",
+        "log": {
+            "version": 2,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT l_orderkey, l_quantity FROM lineitem) as X",
+                            "columnNames": [
+                                "l_orderkey",
+                                "l_quantity"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val ok = r.getField(0) match { case i: Int => i case l: Long => l.toInt case bd: java.math.BigDecimal => bd.intValue case s: String => s.toInt case x => x.toString.toInt }; val qty = r.getField(1) match { case d: Double => d case f: Float => f.toDouble case i: Int => i.toDouble case l: Long => l.toDouble case bd: java.math.BigDecimal => bd.doubleValue case s: String => s.toDouble case x => x.toString.toDouble }; (ok, qty) }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Double)) => t._1",
+                            "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: (Int, Double)) => t._2 > 300.0"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT o_orderkey, o_custkey, o_orderdate, o_totalprice FROM orders) as X",
+                            "columnNames": [
+                                "o_orderkey",
+                                "o_custkey",
+                                "o_orderdate",
+                                "o_totalprice"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "unary",
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], (r.getField(1).asInstanceOf[Int], r.getField(2), r.getField(3).asInstanceOf[Double]))"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                            "thatKeyUdf": "(o: (Int, (Int, Any, Double))) => o._1"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Double), (Int, (Int, Any, Double)))) => { val qty = t._1._2; val o = t._2; val orderkey = o._1; val oc = o._2._1; val od = o._2._2; val price = o._2._3; (oc, (orderkey, od, price, qty)) }"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                            "columnNames": [
+                                "c_custkey",
+                                "c_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).toString)"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "binary",
+                        "input": [
+                            8,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, (Int, Any, Double, Double))) => t._1",
+                            "thatKeyUdf": "(c: (Int, String)) => c._1"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, (Int, Any, Double, Double)), (Int, String))) => { val custname = t._2._2; val custkey = t._2._1; val orderinfo = t._1._2; val orderkey = orderinfo._1; val orderdate = orderinfo._2; val price = orderinfo._3; val qty = orderinfo._4; (price, (custname, custkey, orderkey, orderdate, price, qty)) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "unary",
+                        "input": [
+                            12
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "sort",
+                        "data": {
+                            "keyUdf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => -t._1"
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "cat": "unary",
+                        "input": [
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => List(t)"
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "cat": "unary",
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: List[(Double, (String, Int, Int, Any, Double, Double))], b: List[(Double, (String, Int, Int, Any, Double, Double))]) => (a ++ b).take(100)"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "cat": "unary",
+                        "input": [
+                            15
+                        ],
+                        "output": [
+                            17
+                        ],
+                        "operatorName": "flatMap",
+                        "data": {
+                            "udf": "(lst: List[(Double, (String, Int, Int, Any, Double, Double))]) => lst"
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "cat": "unary",
+                        "input": [
+                            16
+                        ],
+                        "output": [
+                            18
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => { val d = t._2; s\"${d._1} | ${d._2} | ${d._3} | ${d._4} | ${d._5} | ${d._6}\" }"
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "cat": "output",
+                        "input": [
+                            17
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_095152.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 14,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_095152",
+        "log": ""
+    },
+    {
+        "id": 15,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_095154",
+        "log": ""
+    },
+    {
+        "id": 16,
+        "title": "Err: Wayang error. Plan version 2 executed unsucessful",
+        "timestamp": "20251122_095154",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaReduceBy[1->1, id=2fcc38f9]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: reflective compilation has failed:  pattern type is incompatible with expected type;  found   : Int  required: Object pattern type is incompatible with expected type;  found   : Long  required: Object pattern type is incompatible with expected type;  found   : Double  required: Object pattern type is incompatible with expected type;  found   : Float  required: Object at:\n\n(r: org.apache.wayang.basic.data.Record) => { val ok = r.getField(0) match { case i: Int => i case l: Long => l.toInt case bd: java.math.BigDecimal => bd.intValue case s: String => s.toInt case x => x.toString.toInt }; val qty = r.getField(1) match { case d: Double => d case f: Float => f.toDouble case i: Int => i.toDouble case l: Long => l.toDouble case bd: java.math.BigDecimal => bd.doubleValue case s: String => s.toDouble case x => x.toString.toDouble }; (ok, qty) }\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682)\n\tat org.apache.wayang.java.operators.JavaReduceByOperator.evaluate(JavaReduceByOperator.java:96)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 17,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251122_095154",
+        "log": ""
+    },
+    {
+        "id": 18,
+        "title": "Agent Usage: DebuggerAgent. Debug version 3 information",
+        "timestamp": "20251122_095234",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 14519,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 2399,
+                "output_tokens_details": {
+                    "reasoning_tokens": 576
+                },
+                "total_tokens": 16918
+            }
+        }
+    },
+    {
+        "id": 19,
+        "title": "Agent: DebuggerAgent's thoughts, plan 3",
+        "timestamp": "20251122_095234",
+        "log": {
+            "version": 3,
+            "thoughts": "Fixed compile error in map UDFs by removing Scala type-pattern matching on Objects (not supported by the reflective compiler). Converted JDBC fields to numeric types via toString parsing in ops 2 and 6 to ensure consistent (Int, Double) tuples before reduceBy and joins. All other logic unchanged."
+        }
+    },
+    {
+        "id": 20,
+        "title": "Agent: DebuggerAgent's plan: 3",
+        "timestamp": "20251122_095234",
+        "log": {
+            "version": 3,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "l_orderkey",
+                            "l_quantity"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).toString.toInt, r.getField(1).toString.toDouble)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Double)) => t._1",
+                        "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Double)) => t._2 > 300.0",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "orders",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "o_orderkey",
+                            "o_custkey",
+                            "o_orderdate",
+                            "o_totalprice"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).toString.toInt, (r.getField(1).toString.toInt, r.getField(2), r.getField(3).toString.toDouble))",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 7,
+                        "input": [
+                            4,
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                        "thatKeyUdf": "(o: (Int, (Int, Any, Double))) => o._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Double), (Int, (Int, Any, Double)))) => { val qty = t._1._2; val o = t._2; val orderkey = o._1; val oc = o._2._1; val od = o._2._2; val price = o._2._3; (oc, (orderkey, od, price, qty)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 9,
+                        "input": [],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "customer",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "c_custkey",
+                            "c_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).toString)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            8,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(t: (Int, (Int, Any, Double, Double))) => t._1",
+                        "thatKeyUdf": "(c: (Int, String)) => c._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, (Int, Any, Double, Double)), (Int, String))) => { val custname = t._2._2; val custkey = t._2._1; val orderinfo = t._1._2; val orderkey = orderinfo._1; val orderdate = orderinfo._2; val price = orderinfo._3; val qty = orderinfo._4; (price, (custname, custkey, orderkey, orderdate, price, qty)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "sort",
+                        "keyUdf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => -t._1",
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 14,
+                        "input": [
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => List(t)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: List[(Double, (String, Int, Int, Any, Double, Double))], b: List[(Double, (String, Int, Int, Any, Double, Double))]) => (a ++ b).take(100)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [
+                            17
+                        ],
+                        "operatorName": "flatMap",
+                        "keyUdf": null,
+                        "udf": "(lst: List[(Double, (String, Int, Int, Any, Double, Double))]) => lst",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 17,
+                        "input": [
+                            16
+                        ],
+                        "output": [
+                            18
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => { val d = t._2; s\"${d._1} | ${d._2} | ${d._3} | ${d._4} | ${d._5} | ${d._6}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 18,
+                        "input": [
+                            17
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Fixed compile error in map UDFs by removing Scala type-pattern matching on Objects (not supported by the reflective compiler). Converted JDBC fields to numeric types via toString parsing in ops 2 and 6 to ensure consistent (Int, Double) tuples before reduceBy and joins. All other logic unchanged."
+            }
+        }
+    },
+    {
+        "id": 21,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251122_095234",
+        "log": {
+            "version": 3,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT l_orderkey, l_quantity FROM lineitem) as X",
+                            "columnNames": [
+                                "l_orderkey",
+                                "l_quantity"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).toString.toInt, r.getField(1).toString.toDouble)"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Double)) => t._1",
+                            "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: (Int, Double)) => t._2 > 300.0"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT o_orderkey, o_custkey, o_orderdate, o_totalprice FROM orders) as X",
+                            "columnNames": [
+                                "o_orderkey",
+                                "o_custkey",
+                                "o_orderdate",
+                                "o_totalprice"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "unary",
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).toString.toInt, (r.getField(1).toString.toInt, r.getField(2), r.getField(3).toString.toDouble))"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                            "thatKeyUdf": "(o: (Int, (Int, Any, Double))) => o._1"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Double), (Int, (Int, Any, Double)))) => { val qty = t._1._2; val o = t._2; val orderkey = o._1; val oc = o._2._1; val od = o._2._2; val price = o._2._3; (oc, (orderkey, od, price, qty)) }"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                            "columnNames": [
+                                "c_custkey",
+                                "c_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(1).toString)"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "binary",
+                        "input": [
+                            8,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, (Int, Any, Double, Double))) => t._1",
+                            "thatKeyUdf": "(c: (Int, String)) => c._1"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, (Int, Any, Double, Double)), (Int, String))) => { val custname = t._2._2; val custkey = t._2._1; val orderinfo = t._1._2; val orderkey = orderinfo._1; val orderdate = orderinfo._2; val price = orderinfo._3; val qty = orderinfo._4; (price, (custname, custkey, orderkey, orderdate, price, qty)) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "unary",
+                        "input": [
+                            12
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "sort",
+                        "data": {
+                            "keyUdf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => -t._1"
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "cat": "unary",
+                        "input": [
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => List(t)"
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "cat": "unary",
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: List[(Double, (String, Int, Int, Any, Double, Double))], b: List[(Double, (String, Int, Int, Any, Double, Double))]) => (a ++ b).take(100)"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "cat": "unary",
+                        "input": [
+                            15
+                        ],
+                        "output": [
+                            17
+                        ],
+                        "operatorName": "flatMap",
+                        "data": {
+                            "udf": "(lst: List[(Double, (String, Int, Int, Any, Double, Double))]) => lst"
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "cat": "unary",
+                        "input": [
+                            16
+                        ],
+                        "output": [
+                            18
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Double, (String, Int, Int, Any, Double, Double))) => { val d = t._2; s\"${d._1} | ${d._2} | ${d._3} | ${d._4} | ${d._5} | ${d._6}\" }"
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "cat": "output",
+                        "input": [
+                            17
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_095234.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 22,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_095234",
+        "log": ""
+    },
+    {
+        "id": 23,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_095243",
+        "log": ""
+    },
+    {
+        "id": 24,
+        "title": "Final: Sucessful. Plan executed",
+        "timestamp": "20251122_095243",
+        "log": "Success"
+    }
+]

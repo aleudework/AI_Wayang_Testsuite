@@ -13,7 +13,7 @@ if __name__ == "__main__":
     client = MCPClient()
 
     # Get testdata
-    path_to_testdata = '/Users/alexander/VSC_local/Wayang/AI_Wayang_Testsuite/open_dataset_multi.parquet'
+    path_to_testdata = '/Users/alexander/VSC_local/Wayang/AI_Wayang_Testsuite/open_dataset_single.parquet'
     df_testdata = pd.read_parquet(path_to_testdata)
 
     # Test by loading schemas
