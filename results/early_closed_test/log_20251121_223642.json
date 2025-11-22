@@ -1,0 +1,3192 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251121_223642",
+        "log": "Identify all parts supplied by suppliers located in Germany whose individual stock value exceeds 0.0001 of the total stock value of all German suppliers. The stock value of each part is defined as ps_supplycost * ps_availqty. Use only suppliers from the nation \u2018GERMANY\u2019, compute the total stock value for Germany, and return only those parts whose value is greater than 0.0001 of that total. Output in Textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251121_223642",
+        "log": {
+            "model": "gpt-5-nano",
+            "architecture": "Single",
+            "debugger": "True"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: BuilderAgent Information",
+        "timestamp": "20251121_223720",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 11224,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 3904,
+                "output_tokens_details": {
+                    "reasoning_tokens": 2240
+                },
+                "total_tokens": 15128
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: BuilderAgent Raw Plan",
+        "timestamp": "20251121_223720",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_nationkey"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 4,
+                    "input": [
+                        2,
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": "(n: (Integer, String)) => n._1",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ps_partkey",
+                        "ps_suppkey",
+                        "ps_availqty",
+                        "ps_supplycost"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 6,
+                    "input": [
+                        4,
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": "(t: (Integer, Integer)) => t._2",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "reduce",
+                    "keyUdf": "(_ : Any) => 1",
+                    "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 10,
+                    "input": [
+                        7,
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": "(t: (Integer, Double)) => t._1",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 13,
+                    "input": [
+                        12
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Loaded German nation rows, linked to suppliers, and joined with partsupp to compute stock value per part. Calculated total stock value for German suppliers, then filtered parts whose stock value exceeds 0.0001 of that total. Output the resulting part keys and stock values to a text file."
+        }
+    },
+    {
+        "id": 5,
+        "title": "Class: PlanMapper Mapped plan finalized for execution",
+        "timestamp": "20251121_223720",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM (SELECT n_nationkey, n_name FROM nation) as X) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM (SELECT s_suppkey, s_nationkey FROM supplier) as X) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM (SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223720.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251121_223720",
+        "log": ""
+    },
+    {
+        "id": 7,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_223722",
+        "log": ""
+    },
+    {
+        "id": 8,
+        "title": "Err: Wayang error. Plan executed unsucessful",
+        "timestamp": "20251121_223722",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=19f2a92b]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: Cannot invoke \"scala.collection.Seq.toArray(scala.reflect.ClassTag)\" because \"cs\" is null at:\n\nnull\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251121_223722",
+        "log": ""
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: DebuggerAgent. Debug version 2 information",
+        "timestamp": "20251121_223744",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 6444,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 1778,
+                "output_tokens_details": {
+                    "reasoning_tokens": 640
+                },
+                "total_tokens": 8222
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: DebuggerAgent's thoughts, plan 2",
+        "timestamp": "20251121_223744",
+        "log": {
+            "version": 2,
+            "thoughts": "Fixed by providing proper join keyUdf definitions for operator 4 to join nation and supplier on nation key fields. This resolves the null key function issue observed in the server error."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent: DebuggerAgent's plan: 2",
+        "timestamp": "20251121_223744",
+        "log": {
+            "version": 2,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "nation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "n_nationkey",
+                            "n_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 3,
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "supplier",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "s_suppkey",
+                            "s_nationkey"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 4,
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                        "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "partsupp",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ps_partkey",
+                            "ps_suppkey",
+                            "ps_availqty",
+                            "ps_supplycost"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 6,
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 7,
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 10,
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 11,
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Fixed by providing proper join keyUdf definitions for operator 4 to join nation and supplier on nation key fields. This resolves the null key function issue observed in the server error."
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251121_223744",
+        "log": {
+            "version": 2,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                            "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223744.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 14,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251121_223744",
+        "log": ""
+    },
+    {
+        "id": 15,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_223746",
+        "log": ""
+    },
+    {
+        "id": 16,
+        "title": "Err: Wayang error. Plan version 2 executed unsucessful",
+        "timestamp": "20251121_223746",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=126486af]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: Cannot invoke \"scala.collection.Seq.toArray(scala.reflect.ClassTag)\" because \"cs\" is null at:\n\nnull\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.LinkedList$LLSpliterator.forEachRemaining(LinkedList.java:1242)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 17,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251121_223746",
+        "log": ""
+    },
+    {
+        "id": 18,
+        "title": "Agent Usage: DebuggerAgent. Debug version 3 information",
+        "timestamp": "20251121_223809",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 12245,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 2151,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1024
+                },
+                "total_tokens": 14396
+            }
+        }
+    },
+    {
+        "id": 19,
+        "title": "Agent: DebuggerAgent's thoughts, plan 3",
+        "timestamp": "20251121_223809",
+        "log": {
+            "version": 3,
+            "thoughts": "Adjusted join key lambdas to correctly extract keys from the nation and supplier inputs to fix the null-Serialization issue in the join lambda."
+        }
+    },
+    {
+        "id": 20,
+        "title": "Agent: DebuggerAgent's plan: 3",
+        "timestamp": "20251121_223809",
+        "log": {
+            "version": 3,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "nation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "n_nationkey",
+                            "n_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 3,
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "supplier",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "s_suppkey",
+                            "s_nationkey"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 4,
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                        "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "partsupp",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ps_partkey",
+                            "ps_suppkey",
+                            "ps_availqty",
+                            "ps_supplycost"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 6,
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 7,
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 10,
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 11,
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Adjusted join key lambdas to correctly extract keys from the nation and supplier inputs to fix the null-Serialization issue in the join lambda."
+            }
+        }
+    },
+    {
+        "id": 21,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251121_223809",
+        "log": {
+            "version": 3,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                            "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223809.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 22,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251121_223809",
+        "log": ""
+    },
+    {
+        "id": 23,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_223811",
+        "log": ""
+    },
+    {
+        "id": 24,
+        "title": "Err: Wayang error. Plan version 3 executed unsucessful",
+        "timestamp": "20251121_223811",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=5fe5498a]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: Cannot invoke \"scala.collection.Seq.toArray(scala.reflect.ClassTag)\" because \"cs\" is null at:\n\nnull\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.LinkedList$LLSpliterator.forEachRemaining(LinkedList.java:1242)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 25,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251121_223811",
+        "log": ""
+    },
+    {
+        "id": 26,
+        "title": "Agent Usage: DebuggerAgent. Debug version 4 information",
+        "timestamp": "20251121_223831",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 18039,
+                "input_tokens_details": {
+                    "cached_tokens": 12160
+                },
+                "output_tokens": 1763,
+                "output_tokens_details": {
+                    "reasoning_tokens": 640
+                },
+                "total_tokens": 19802
+            }
+        }
+    },
+    {
+        "id": 27,
+        "title": "Agent: DebuggerAgent's thoughts, plan 4",
+        "timestamp": "20251121_223831",
+        "log": {
+            "version": 4,
+            "thoughts": "Adjusted join key lambdas to explicitly convert join keys to integers to avoid serialization issues in the join\u2019s key lambdas."
+        }
+    },
+    {
+        "id": 28,
+        "title": "Agent: DebuggerAgent's plan: 4",
+        "timestamp": "20251121_223831",
+        "log": {
+            "version": 4,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "nation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "n_nationkey",
+                            "n_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 3,
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "supplier",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "s_suppkey",
+                            "s_nationkey"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 4,
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                        "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "partsupp",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ps_partkey",
+                            "ps_suppkey",
+                            "ps_availqty",
+                            "ps_supplycost"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 6,
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 7,
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 10,
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 11,
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Adjusted join key lambdas to explicitly convert join keys to integers to avoid serialization issues in the join\u2019s key lambdas."
+            }
+        }
+    },
+    {
+        "id": 29,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251121_223831",
+        "log": {
+            "version": 4,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                            "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223831.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 30,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251121_223831",
+        "log": ""
+    },
+    {
+        "id": 31,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_223833",
+        "log": ""
+    },
+    {
+        "id": 32,
+        "title": "Err: Wayang error. Plan version 4 executed unsucessful",
+        "timestamp": "20251121_223833",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=699ecfcd]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: Cannot invoke \"scala.collection.Seq.toArray(scala.reflect.ClassTag)\" because \"cs\" is null at:\n\nnull\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.LinkedList$LLSpliterator.forEachRemaining(LinkedList.java:1242)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 33,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251121_223833",
+        "log": ""
+    },
+    {
+        "id": 34,
+        "title": "Agent Usage: DebuggerAgent. Debug version 5 information",
+        "timestamp": "20251121_223857",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 23829,
+                "input_tokens_details": {
+                    "cached_tokens": 17920
+                },
+                "output_tokens": 2246,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 26075
+            }
+        }
+    },
+    {
+        "id": 35,
+        "title": "Agent: DebuggerAgent's thoughts, plan 5",
+        "timestamp": "20251121_223857",
+        "log": {
+            "version": 5,
+            "thoughts": "Introduced explicit keyUdf/thatKeyUdf for the multi-input joins to avoid serialization issues in the join evaluators."
+        }
+    },
+    {
+        "id": 36,
+        "title": "Agent: DebuggerAgent's plan: 5",
+        "timestamp": "20251121_223857",
+        "log": {
+            "version": 5,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "nation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "n_nationkey",
+                            "n_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 3,
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "supplier",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "s_suppkey",
+                            "s_nationkey"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 4,
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                        "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "partsupp",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ps_partkey",
+                            "ps_suppkey",
+                            "ps_availqty",
+                            "ps_supplycost"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 6,
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                        "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(0)",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 7,
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 10,
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 11,
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Introduced explicit keyUdf/thatKeyUdf for the multi-input joins to avoid serialization issues in the join evaluators."
+            }
+        }
+    },
+    {
+        "id": 37,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251121_223857",
+        "log": {
+            "version": 5,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                            "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(1)"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                            "thatKeyUdf": "(s: org.apache.wayang.basic.data.Record) => s.getField(0)"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223857.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 38,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251121_223857",
+        "log": ""
+    },
+    {
+        "id": 39,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_223859",
+        "log": ""
+    },
+    {
+        "id": 40,
+        "title": "Err: Wayang error. Plan version 5 executed unsucessful",
+        "timestamp": "20251121_223859",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=5b711f12]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class scala.Tuple2 cannot be cast to class org.apache.wayang.basic.data.Record (scala.Tuple2 and org.apache.wayang.basic.data.Record are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.LinkedList$LLSpliterator.forEachRemaining(LinkedList.java:1242)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 41,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251121_223859",
+        "log": ""
+    },
+    {
+        "id": 42,
+        "title": "Agent Usage: DebuggerAgent. Debug version 6 information",
+        "timestamp": "20251121_223935",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 29619,
+                "input_tokens_details": {
+                    "cached_tokens": 23680
+                },
+                "output_tokens": 3558,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1792
+                },
+                "total_tokens": 33177
+            }
+        }
+    },
+    {
+        "id": 43,
+        "title": "Agent: DebuggerAgent's thoughts, plan 6",
+        "timestamp": "20251121_223935",
+        "log": {
+            "version": 6,
+            "thoughts": "Plan converted from JSON"
+        }
+    },
+    {
+        "id": 44,
+        "title": "Agent: DebuggerAgent's plan: 6",
+        "timestamp": "20251121_223935",
+        "log": {
+            "version": 6,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "nation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "n_nationkey",
+                            "n_name"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 3,
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "supplier",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "s_suppkey",
+                            "s_nationkey"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 4,
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(e: java.lang.Object) => { val r = if (e.isInstanceOf[org.apache.wayang.basic.data.Record]) e.asInstanceOf[org.apache.wayang.basic.data.Record] else e.asInstanceOf[scala.Tuple2[_, _]]._1.asInstanceOf[org.apache.wayang.basic.data.Record]; r.getField(0) }",
+                        "thatKeyUdf": "(e: java.lang.Object) => { val s = if (e.isInstanceOf[org.apache.wayang.basic.data.Record]) e.asInstanceOf[org.apache.wayang.basic.data.Record] else e.asInstanceOf[scala.Tuple2[_, _]]._2.asInstanceOf[org.apache.wayang.basic.data.Record]; s.getField(1) }",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 5,
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "partsupp",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ps_partkey",
+                            "ps_suppkey",
+                            "ps_availqty",
+                            "ps_supplycost"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 6,
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 7,
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "keyUdf": "(_ : Any) => 1",
+                        "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 10,
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 11,
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 13,
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Plan converted from JSON"
+            }
+        }
+    },
+    {
+        "id": 45,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251121_223935",
+        "log": {
+            "version": 6,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val name = r.getField(1).toString; name == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(e: java.lang.Object) => { val r = if (e.isInstanceOf[org.apache.wayang.basic.data.Record]) e.asInstanceOf[org.apache.wayang.basic.data.Record] else e.asInstanceOf[scala.Tuple2[_, _]]._1.asInstanceOf[org.apache.wayang.basic.data.Record]; r.getField(0) }",
+                            "thatKeyUdf": "(e: java.lang.Object) => { val s = if (e.isInstanceOf[org.apache.wayang.basic.data.Record]) e.asInstanceOf[org.apache.wayang.basic.data.Record] else e.asInstanceOf[scala.Tuple2[_, _]]._2.asInstanceOf[org.apache.wayang.basic.data.Record]; s.getField(1) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val part = r.getField(0); val stock = r.getField(1).asInstanceOf[Double]; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (org.apache.wayang.basic.data.Record)) => a._1.exists(x => true)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val total = r.getField(1).toString.toDouble; (1, total) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": null,
+                            "thatKeyUdf": null
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val stock = t._1._2; val total = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Double), (Integer, Double))) => { val part = t._1._1; val stock = t._1._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223935.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 46,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251121_223935",
+        "log": ""
+    },
+    {
+        "id": 47,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_223937",
+        "log": ""
+    },
+    {
+        "id": 48,
+        "title": "Err: Wayang error. Plan version 6 executed unsucessful",
+        "timestamp": "20251121_223937",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=3052daea]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: Cannot invoke \"scala.collection.Seq.toArray(scala.reflect.ClassTag)\" because \"cs\" is null at:\n\nnull\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.LinkedList$LLSpliterator.forEachRemaining(LinkedList.java:1242)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 49,
+        "title": "Final: Unsucessful. Plan executed unsucessful",
+        "timestamp": "20251121_223937",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=3052daea]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: Cannot invoke \"scala.collection.Seq.toArray(scala.reflect.ClassTag)\" because \"cs\" is null at:\n\nnull\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$1(JavaJoinOperator.java:115)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.LinkedList$LLSpliterator.forEachRemaining(LinkedList.java:1242)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:114)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    }
+]

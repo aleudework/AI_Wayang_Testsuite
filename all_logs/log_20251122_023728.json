@@ -1,0 +1,1565 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251122_023728",
+        "log": "Generate a Wayang plan that computes the total discounted revenue for shipments between the nations \u2018GERMANY\u2019 and \u2018FRANCE\u2019 during 1995 and 1996. Revenue is l_extendedprice * (1 - l_discount). Join supplier, lineitem, orders, customer, and the nation tables, and keep only rows where the supplier is from one of the two nations and the customer is from the other. Use only shipments with l_shipdate between 1995-01-01 and 1996-12-31, extract the shipment year, and group results by supplier nation, customer nation, and year. Output in a textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251122_023728",
+        "log": {
+            "model": "gpt-5-nano",
+            "architecture": "Multi",
+            "debugger": "False"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: SpecifierAgent Information",
+        "timestamp": "20251122_023731",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 425,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 290,
+                "output_tokens_details": {
+                    "reasoning_tokens": 128
+                },
+                "total_tokens": 715
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: SpecifierAgent Output",
+        "timestamp": "20251122_023731",
+        "log": "Generate a Wayang plan that computes the total discounted revenue for shipments between the nations Germany and France during 1995 and 1996. The revenue is calculated as l_extendedprice * (1 - l_discount). The plan must join the following tables: supplier, lineitem, orders, customer, and nation. Include only rows where the supplier\u2019s nation is either Germany or France and the customer\u2019s nation is the other one (i.e., one nation per row, supplier and customer in opposite nations). Use only shipments with l_shipdate between 1995-01-01 and 1996-12-31. Extract the shipment year from l_shipdate and group the results by supplier nation, customer nation, and year. Output the final results to a text file."
+    },
+    {
+        "id": 5,
+        "title": "Agent Usage: SelectorAgent Information",
+        "timestamp": "20251122_023736",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 991,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 449,
+                "output_tokens_details": {
+                    "reasoning_tokens": 384
+                },
+                "total_tokens": 1440
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Agent: SelectorAgent Output",
+        "timestamp": "20251122_023736",
+        "log": {
+            "tables": [
+                "supplier",
+                "lineitem",
+                "orders",
+                "customer",
+                "nation"
+            ],
+            "textfiles": null,
+            "thoughts": "Selected tables that are directly used in the query: supplier, lineitem, orders, customer, and nation. No text files are needed for this plan."
+        }
+    },
+    {
+        "id": 7,
+        "title": "Agent Usage: DecomposerAgent Information",
+        "timestamp": "20251122_023747",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 5155,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 1409,
+                "output_tokens_details": {
+                    "reasoning_tokens": 832
+                },
+                "total_tokens": 6564
+            }
+        }
+    },
+    {
+        "id": 8,
+        "title": "Agent: DecomposerAgent Output",
+        "timestamp": "20251122_023747",
+        "log": {
+            "steps": [
+                {
+                    "step_id": 1,
+                    "transformation": "input-transformations",
+                    "depends_on": [],
+                    "detailed_description": "Load the following input sources: supplier, lineitem, orders, customer, nation. Each input provides all columns as defined in the data information and will be used to build the combined shipment view."
+                },
+                {
+                    "step_id": 2,
+                    "transformation": "binary-transformations",
+                    "depends_on": [
+                        1
+                    ],
+                    "detailed_description": "Join lineitem with orders on l_orderkey to associate line items with orders. Then join the result with supplier on l_suppkey = s_suppkey to tie shipments to suppliers. Next, join supplier with nation on s_nationkey = n_nationkey to get supplier nation name, and join orders with customer on o_custkey = c_custkey, then join customer with nation on c_nationkey = n_nationkey to obtain customer nation name. The resulting dataset should include: supplier nation name, customer nation name, l_extendedprice, l_discount, l_shipdate, and any required keys for grouping and filtering."
+                },
+                {
+                    "step_id": 3,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        2
+                    ],
+                    "detailed_description": "Filter rows where l_shipdate is between 1995-01-01 and 1996-12-31 inclusive. Further filter to include only shipments where the supplier nation is Germany or France and the customer nation is the other nation (i.e., supplier nation and customer nation are the two nations in {GERMANY, FRANCE} and differ). Compute the per-row revenue as l_extendedprice * (1 - l_discount). Extract the shipment year from l_shipdate. Then group by supplier nation name, customer nation name, and year, aggregating the sum of revenue to produce total discounted revenue per (supplier nation, customer nation, year)."
+                },
+                {
+                    "step_id": 4,
+                    "transformation": "output-transformations",
+                    "depends_on": [
+                        3
+                    ],
+                    "detailed_description": "Write the aggregated results to a text file in a tabular format suitable for downstream consumption. Ensure the output includes columns: supplier_nation, customer_nation, year, total_discounted_revenue."
+                }
+            ],
+            "thoughts": "We construct a compact, acyclic plan with four steps: load all sources, perform a comprehensive join to enrich shipments with nation contexts, filter and compute revenue by year and nation pairing, then output to a text file. This satisfies the nation-pair constraint and the required date and revenue formula."
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: StepHandler created step dependencies and queue",
+        "timestamp": "20251122_023747",
+        "log": "Step queue [1, 2, 3, 4]"
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: BuilderAgent Information step 1",
+        "timestamp": "20251122_023801",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 10889,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 1520,
+                "output_tokens_details": {
+                    "reasoning_tokens": 704
+                },
+                "total_tokens": 12409
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: BuilderAgent Subplan for step 1",
+        "timestamp": "20251122_023801",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT * FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_name",
+                        "s_address",
+                        "s_nationkey",
+                        "s_phone",
+                        "s_acctbal",
+                        "s_comment"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT * FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_linenumber",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_tax",
+                        "l_returnflag",
+                        "l_linestatus",
+                        "l_shipdate",
+                        "l_commitdate",
+                        "l_receiptdate",
+                        "l_shipinstruct",
+                        "l_shipmode",
+                        "l_comment"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT * FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderstatus",
+                        "o_totalprice",
+                        "o_orderdate",
+                        "o_orderpriority",
+                        "o_clerk",
+                        "o_shippriority",
+                        "o_comment"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT * FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name",
+                        "c_address",
+                        "c_nationkey",
+                        "c_phone",
+                        "c_acctbal",
+                        "c_mktsegment",
+                        "c_comment"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT * FROM nation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name",
+                        "n_regionkey",
+                        "n_comment"
+                    ]
+                }
+            ],
+            "thoughts": "Generated first-step inputs for supplier, lineitem, orders, customer, and nation to enable building a combined shipment view in subsequent steps."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent Usage: BuilderAgent Information step 2",
+        "timestamp": "20251122_023814",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 11358,
+                "input_tokens_details": {
+                    "cached_tokens": 10752
+                },
+                "output_tokens": 1688,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1664
+                },
+                "total_tokens": 13046
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Agent: BuilderAgent Subplan for step 2",
+        "timestamp": "20251122_023814",
+        "log": {
+            "operations": [],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 14,
+        "title": "Agent Usage: BuilderAgent Information step 3",
+        "timestamp": "20251122_023841",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 11830,
+                "input_tokens_details": {
+                    "cached_tokens": 11264
+                },
+                "output_tokens": 2918,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 14748
+            }
+        }
+    },
+    {
+        "id": 15,
+        "title": "Agent: BuilderAgent Subplan for step 3",
+        "timestamp": "20251122_023841",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_suppkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_suppkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_shippriority, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_shippriority",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._1.getField(0)",
+                    "thatKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._2.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_nationkey"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 5,
+                    "input": [
+                        4,
+                        3
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._1.getField(0)",
+                    "thatKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._2.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 6,
+                    "input": [],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 7,
+                    "input": [
+                        5,
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._1.getField(1)",
+                    "thatKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._2.getField(1)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 8,
+                    "input": [],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_nationkey FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_nationkey"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 9,
+                    "input": [
+                        7,
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._1.getField(0)",
+                    "thatKeyUdf": "(t: (org.apache.wayang.basic.data.Record, org.apache.wayang.basic.data.Record)) => t._2.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val s_price = r.getField(2); val s_disc = r.getField(3); val l_ship = r.getField(4); val revenue = s_price.asInstanceOf[Number].doubleValue() * (1.0 - s_disc.asInstanceOf[Number].doubleValue()); val year = java.time.LocalDate.parse(l_ship.toString).getYear; (r.getField(0), r.getField(1), revenue, year) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Object, Number, Number, Number)) => t._1",
+                    "udf": "(a: (Object, Number, Number, Number), b: (Object, Number, Number, Number)) => (a._1, a._2 + b._2, a._3 + b._3, a._4 + b._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 16,
+        "title": "Agent Usage: BuilderAgent Information step 4",
+        "timestamp": "20251122_023904",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 12208,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 2777,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1408
+                },
+                "total_tokens": 14985
+            }
+        }
+    },
+    {
+        "id": 17,
+        "title": "Agent: BuilderAgent Subplan for step 4",
+        "timestamp": "20251122_023904",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_suppkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_suppkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_nationkey"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_nationkey, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_nationkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 6,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Double, Double, String)) => t._0",
+                    "thatKeyUdf": "(r: (Int, Int, String)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 7,
+                    "input": [
+                        6,
+                        3
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Double, Double, String)) => t._1",
+                    "thatKeyUdf": "(r: (Int, Int)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 8,
+                    "input": [
+                        7,
+                        4
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Double, Double, String, Int, Int)) => t._2",
+                    "thatKeyUdf": "(r: (Int, String)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Double, Double, String, Int, Int), (Int, String, Int))) => { val supplierNation = t._2._2; val customerNation = t._2._3; val lExtended = t._1._2; val lDiscount = t._1._3; val lShip = t._1._4; (supplierNation, customerNation, lExtended, lDiscount, lShip) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Combined multiple input sources and staged a sequence of joins to build a shipment view referenced by downstream transformations. Used JDBC inputs producing Records and applied UDFs that access Record fields accordingly."
+        }
+    },
+    {
+        "id": 18,
+        "title": "Class: StepHandler merged subplans to full plan",
+        "timestamp": "20251122_023904",
+        "log": {
+            "operations": [
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Object, Number, Number, Number)) => t._1",
+                    "udf": "(a: (Object, Number, Number, Number), b: (Object, Number, Number, Number)) => (a._1, a._2 + b._2, a._3 + b._3, a._4 + b._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_suppkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_suppkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_nationkey"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_nationkey, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_nationkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 6,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Double, Double, String)) => t._0",
+                    "thatKeyUdf": "(r: (Int, Int, String)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 7,
+                    "input": [
+                        6,
+                        3
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Double, Double, String)) => t._1",
+                    "thatKeyUdf": "(r: (Int, Int)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 8,
+                    "input": [
+                        7,
+                        4
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Double, Double, String, Int, Int)) => t._2",
+                    "thatKeyUdf": "(r: (Int, String)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Double, Double, String, Int, Int), (Int, String, Int))) => { val supplierNation = t._2._2; val customerNation = t._2._3; val lExtended = t._1._2; val lDiscount = t._1._3; val lShip = t._1._4; (supplierNation, customerNation, lExtended, lDiscount, lShip) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 19,
+        "title": "Agent Usage: RefinerAgent Information",
+        "timestamp": "20251122_023933",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 12712,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 3670,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1728
+                },
+                "total_tokens": 16382
+            }
+        }
+    },
+    {
+        "id": 20,
+        "title": "Agent: RefinerAgent Output",
+        "timestamp": "20251122_023933",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_suppkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_suppkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val date = r.getField(4).toString; val year = Integer.parseInt(date.substring(0,4)); year >= 1995 && year <= 1996 }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 4,
+                    "input": [
+                        2,
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Integer, Double, Date)) => t._0",
+                    "thatKeyUdf": "(r: (Integer, Integer, Date)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_nationkey"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 6,
+                    "input": [
+                        5,
+                        4
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Integer, Integer)) => t._0",
+                    "thatKeyUdf": "(r: (Integer, Integer)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 7,
+                    "input": [],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_nationkey FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_nationkey"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 8,
+                    "input": [
+                        7,
+                        6
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Integer, Integer)) => t._0",
+                    "thatKeyUdf": "(r: (Integer, Integer)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 9,
+                    "input": [
+                        4,
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Integer, Integer, Date)) => t._1",
+                    "thatKeyUdf": "(r: (Integer, Integer)) => r._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Integer, Integer, Date), (Integer, Integer, Integer))) => {\n  val supplierNation = t._2._2;\n  val customerNation = t._2._3;\n  val lExtended = 0.0 + t._1._2;\n  val lDiscount = t._1._3;\n  val lShipDate = t._1._3;\n  val year = t._1._3.toString.substring(0,4).toInt;\n  (supplierNation, customerNation, year, lExtended * (1.0 - lDiscount))\n}",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (String, String, Integer, Double)) => (t._1, t._2, t._3)",
+                    "udf": "(a: (String, String, Integer, Double), b: (String, String, Integer, Double)) => (a._1, a._2, a._3, a._4 + b._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (String, String, Integer, Double)) => s\"${t._1} | ${t._2} | ${t._3} | ${t._4}\"",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 13,
+                    "input": [
+                        12
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Refined plan to compute total discounted revenue by joining lineitem, orders, supplier, customer, and nation. Added a date-range filter on l_shipdate, computed year from shipdate, calculated revenue per row, grouped by supplier nation, customer nation, and year, then aggregated with reduceBy and finally output to textFileOutput."
+        }
+    },
+    {
+        "id": 21,
+        "title": "Class: PlanMapper Mapped the refined plan finalized for execution",
+        "timestamp": "20251122_023933",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT l_orderkey, l_suppkey, l_extendedprice, l_discount, l_shipdate FROM (SELECT l_orderkey, l_suppkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X) as X",
+                            "columnNames": [
+                                "l_orderkey",
+                                "l_suppkey",
+                                "l_extendedprice",
+                                "l_discount",
+                                "l_shipdate"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val date = r.getField(4).toString; val year = Integer.parseInt(date.substring(0,4)); year >= 1995 && year <= 1996 }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT o_orderkey, o_custkey, o_orderdate FROM (SELECT o_orderkey, o_custkey, o_orderdate FROM orders) as X) as X",
+                            "columnNames": [
+                                "o_orderkey",
+                                "o_custkey",
+                                "o_orderdate"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "binary",
+                        "input": [
+                            2,
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Integer, Double, Date)) => t._0",
+                            "thatKeyUdf": "(r: (Integer, Integer, Date)) => r._0"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM (SELECT s_suppkey, s_nationkey FROM supplier) as X) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            5,
+                            4
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Integer, Integer)) => t._0",
+                            "thatKeyUdf": "(r: (Integer, Integer)) => r._0"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT c_custkey, c_nationkey FROM (SELECT c_custkey, c_nationkey FROM customer) as X) as X",
+                            "columnNames": [
+                                "c_custkey",
+                                "c_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            6
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Integer, Integer)) => t._0",
+                            "thatKeyUdf": "(r: (Integer, Integer)) => r._0"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Integer, Integer, Date)) => t._1",
+                            "thatKeyUdf": "(r: (Integer, Integer)) => r._0"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, Integer, Date), (Integer, Integer, Integer))) => {\n  val supplierNation = t._2._2;\n  val customerNation = t._2._3;\n  val lExtended = 0.0 + t._1._2;\n  val lDiscount = t._1._3;\n  val lShipDate = t._1._3;\n  val year = t._1._3.toString.substring(0,4).toInt;\n  (supplierNation, customerNation, year, lExtended * (1.0 - lDiscount))\n}"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (String, String, Integer, Double)) => (t._1, t._2, t._3)",
+                            "udf": "(a: (String, String, Integer, Double), b: (String, String, Integer, Double)) => (a._1, a._2, a._3, a._4 + b._4)"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (String, String, Integer, Double)) => s\"${t._1} | ${t._2} | ${t._3} | ${t._4}\""
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "output",
+                        "input": [
+                            12
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_023933.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 22,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251122_023933",
+        "log": ""
+    },
+    {
+        "id": 23,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_023941",
+        "log": ""
+    },
+    {
+        "id": 24,
+        "title": "Err: Wayang error. Plan executed unsucessful",
+        "timestamp": "20251122_023941",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=123d6b72]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: reflective compilation has failed:  not found: type Date at:\n\n(r: (Integer, Integer, Date)) => r._0\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 25,
+        "title": "Final: Unsucessful. Plan executed unsucessful",
+        "timestamp": "20251122_023941",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=123d6b72]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.api.json.exception.WayangApiJsonException: reflective compilation has failed:  not found: type Date at:\n\n(r: (Integer, Integer, Date)) => r._0\n\tat org.apache.wayang.api.json.parserutil.ParsingErrors$.handleException(ParsingErrors.scala:29)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.liftedTree1$1(SerializableLambda.scala:34)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction$lzycompute(SerializableLambda.scala:28)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.lambdaFunction(SerializableLambda.scala:26)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    }
+]

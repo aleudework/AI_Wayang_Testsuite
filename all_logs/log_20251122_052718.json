@@ -1,0 +1,2981 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251122_052718",
+        "log": "Create a plan that summarizes all line items shipped before a cutoff date, defined as July 1st 1998 minus 90 days. The query must group the results by return flag and line status. For each group, calculate the total quantity, total extended price, average quantity, average extended price, and the number of rows. You don't need ordering or sortineg. The output must be in textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251122_052718",
+        "log": {
+            "model": "gpt-5",
+            "architecture": "Multi",
+            "debugger": "True"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: SpecifierAgent Information",
+        "timestamp": "20251122_052731",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 377,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 895,
+                "output_tokens_details": {
+                    "reasoning_tokens": 768
+                },
+                "total_tokens": 1272
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: SpecifierAgent Output",
+        "timestamp": "20251122_052731",
+        "log": "- Compute cutoff_date as 1998-07-01 minus 90 days (i.e., 1998-04-02).\n- Select all line items with ship_date < cutoff_date.\n- Group the results by return_flag and line_status.\n- For each group, compute:\n  - total_quantity = SUM(quantity)\n  - total_extended_price = SUM(extended_price)\n  - avg_quantity = AVG(quantity)\n  - avg_extended_price = AVG(extended_price)\n  - row_count = COUNT(*)\n- Do not apply ordering or sorting.\n- Write the result to a text file."
+    },
+    {
+        "id": 5,
+        "title": "Agent Usage: SelectorAgent Information",
+        "timestamp": "20251122_052741",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 943,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 438,
+                "output_tokens_details": {
+                    "reasoning_tokens": 384
+                },
+                "total_tokens": 1381
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Agent: SelectorAgent Output",
+        "timestamp": "20251122_052741",
+        "log": {
+            "tables": [],
+            "textfiles": [],
+            "thoughts": "No data sources were provided in the available list. If a TPC-H-like schema were available, the required source would be the 'lineitem' table."
+        }
+    },
+    {
+        "id": 7,
+        "title": "Agent Usage: DecomposerAgent Information",
+        "timestamp": "20251122_052756",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 3235,
+                "input_tokens_details": {
+                    "cached_tokens": 2688
+                },
+                "output_tokens": 798,
+                "output_tokens_details": {
+                    "reasoning_tokens": 512
+                },
+                "total_tokens": 4033
+            }
+        }
+    },
+    {
+        "id": 8,
+        "title": "Agent: DecomposerAgent Output",
+        "timestamp": "20251122_052756",
+        "log": {
+            "steps": [
+                {
+                    "step_id": 1,
+                    "transformation": "input-transformations",
+                    "depends_on": [],
+                    "detailed_description": "Load the line items dataset as input (must include columns: ship_date, quantity, extended_price, return_flag, line_status)."
+                },
+                {
+                    "step_id": 2,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        1
+                    ],
+                    "detailed_description": "Compute cutoff_date as 1998-07-01 minus 90 days = 1998-04-02. Filter rows where ship_date < cutoff_date. Then group the filtered rows by (return_flag, line_status) and compute the following per-group aggregates: total_quantity = SUM(quantity), total_extended_price = SUM(extended_price), avg_quantity = AVG(quantity), avg_extended_price = AVG(extended_price), row_count = COUNT(*). Do not apply any ordering. Input: full line items dataset. Output: aggregated dataset with one row per (return_flag, line_status) containing the specified metrics."
+                },
+                {
+                    "step_id": 3,
+                    "transformation": "output-transformations",
+                    "depends_on": [
+                        2
+                    ],
+                    "detailed_description": "Write the aggregated results to a text file output as-is (no sorting)."
+                }
+            ],
+            "thoughts": "The task requires a single input, a filter+group-by aggregation without ordering, and then writing the result. Three concise steps cover input, unary transformations, and output."
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: StepHandler created step dependencies and queue",
+        "timestamp": "20251122_052756",
+        "log": "Step queue [1, 2, 3]"
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: BuilderAgent Information step 1",
+        "timestamp": "20251122_052813",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 8992,
+                "input_tokens_details": {
+                    "cached_tokens": 8704
+                },
+                "output_tokens": 901,
+                "output_tokens_details": {
+                    "reasoning_tokens": 768
+                },
+                "total_tokens": 9893
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: BuilderAgent Subplan for step 1",
+        "timestamp": "20251122_052813",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ship_date",
+                        "quantity",
+                        "extended_price",
+                        "return_flag",
+                        "line_status"
+                    ]
+                }
+            ],
+            "thoughts": "Initialized plan with a JDBC input loading required line items columns; left output open for subsequent steps."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent Usage: BuilderAgent Information step 2",
+        "timestamp": "20251122_052854",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 9454,
+                "input_tokens_details": {
+                    "cached_tokens": 8960
+                },
+                "output_tokens": 2165,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1408
+                },
+                "total_tokens": 11619
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Agent: BuilderAgent Subplan for step 2",
+        "timestamp": "20251122_052854",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ship_date",
+                        "quantity",
+                        "extended_price",
+                        "return_flag",
+                        "line_status"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val sd = r.getField(0).toString.trim; sd.nonEmpty && sd < \"1998-04-02\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue; case s => s.toString.toDouble }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue; case s => s.toString.toDouble }; val rf = r.getField(3).toString; val ls = r.getField(4).toString; ((rf, ls), (qty, ext, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => (a._1, (a._2._1 + b._2._1, a._2._2 + b._2._2, a._2._3 + b._2._3))",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cnt = t._2._3; val avgQ = if (cnt == 0L) 0.0 else sumQ / cnt; val avgE = if (cnt == 0L) 0.0 else sumE / cnt; (rf, ls, sumQ, sumE, avgQ, avgE, cnt) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Started with JDBC input of required columns, filtered by cutoff date, aggregated via reduceBy to compute sums and counts, then mapped to add averages."
+        }
+    },
+    {
+        "id": 14,
+        "title": "Agent Usage: BuilderAgent Information step 3",
+        "timestamp": "20251122_052946",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 9808,
+                "input_tokens_details": {
+                    "cached_tokens": 9344
+                },
+                "output_tokens": 2815,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1984
+                },
+                "total_tokens": 12623
+            }
+        }
+    },
+    {
+        "id": 15,
+        "title": "Agent: BuilderAgent Subplan for step 3",
+        "timestamp": "20251122_052946",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ship_date",
+                        "quantity",
+                        "extended_price",
+                        "return_flag",
+                        "line_status"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = Option(r.getField(0)).map(_.toString).getOrElse(\"\"); d.nonEmpty && d < \"1998-04-02\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1).toString.toDouble; val ext = r.getField(2).toString.toDouble; val rf = r.getField(3).toString; val ls = r.getField(4).toString; ((rf, ls), (qty, ext, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Started with JDBC input for lineitem columns, filtered by ship_date < 1998-04-02, mapped to keyed partial aggregates, reduced by key to sums and counts, then mapped to a string and wrote to text output without sorting."
+        }
+    },
+    {
+        "id": 16,
+        "title": "Class: StepHandler merged subplans to full plan",
+        "timestamp": "20251122_052946",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ship_date",
+                        "quantity",
+                        "extended_price",
+                        "return_flag",
+                        "line_status"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = Option(r.getField(0)).map(_.toString).getOrElse(\"\"); d.nonEmpty && d < \"1998-04-02\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1).toString.toDouble; val ext = r.getField(2).toString.toDouble; val rf = r.getField(3).toString; val ls = r.getField(4).toString; ((rf, ls), (qty, ext, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 17,
+        "title": "Agent Usage: RefinerAgent Information",
+        "timestamp": "20251122_053015",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 10161,
+                "input_tokens_details": {
+                    "cached_tokens": 8960
+                },
+                "output_tokens": 1599,
+                "output_tokens_details": {
+                    "reasoning_tokens": 768
+                },
+                "total_tokens": 11760
+            }
+        }
+    },
+    {
+        "id": 18,
+        "title": "Agent: RefinerAgent Output",
+        "timestamp": "20251122_053015",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ship_date",
+                        "quantity",
+                        "extended_price",
+                        "return_flag",
+                        "line_status"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = Option(r.getField(0)).map(_.toString).getOrElse(\"\").trim; d.nonEmpty && d < \"1998-04-02\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1).toString.toDouble; val ext = r.getField(2).toString.toDouble; val rf = r.getField(3).toString; val ls = r.getField(4).toString; ((rf, ls), (qty, ext, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Validated DAG and operator arities. Confirmed ISO date string comparison for strict cutoff and computed sums/averages per (return_flag, line_status). Added trim in date filter; no ordering applied; output written via textFileOutput."
+        }
+    },
+    {
+        "id": 19,
+        "title": "Class: PlanMapper Mapped the refined plan finalized for execution",
+        "timestamp": "20251122_053015",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                            "columnNames": [
+                                "ship_date",
+                                "quantity",
+                                "extended_price",
+                                "return_flag",
+                                "line_status"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = Option(r.getField(0)).map(_.toString).getOrElse(\"\").trim; d.nonEmpty && d < \"1998-04-02\" }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1).toString.toDouble; val ext = r.getField(2).toString.toDouble; val rf = r.getField(3).toString; val ls = r.getField(4).toString; ((rf, ls), (qty, ext, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053015.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 20,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251122_053015",
+        "log": ""
+    },
+    {
+        "id": 21,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053015",
+        "log": ""
+    },
+    {
+        "id": 22,
+        "title": "Err: Wayang error. Plan executed unsucessful",
+        "timestamp": "20251122_053015",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=529838f8]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    },
+    {
+        "id": 23,
+        "title": "Class: PlanMapper Simplifies to JSON",
+        "timestamp": "20251122_053015",
+        "log": ""
+    },
+    {
+        "id": 24,
+        "title": "Agent Usage: DebuggerAgent. Debug version 2 information",
+        "timestamp": "20251122_053042",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 4010,
+                "input_tokens_details": {
+                    "cached_tokens": 2688
+                },
+                "output_tokens": 1483,
+                "output_tokens_details": {
+                    "reasoning_tokens": 640
+                },
+                "total_tokens": 5493
+            }
+        }
+    },
+    {
+        "id": 25,
+        "title": "Agent: DebuggerAgent's thoughts, plan 2",
+        "timestamp": "20251122_053042",
+        "log": {
+            "version": 2,
+            "thoughts": "Fixed the filter UDF to handle JDBC java.sql.Date properly by comparing timestamps (getTime) against cutoff date 1998-04-02. Previously it compared strings, which can be unsafe and not aligned with Wayang's JDBC Date handling guidance."
+        }
+    },
+    {
+        "id": 26,
+        "title": "Agent: DebuggerAgent's plan: 2",
+        "timestamp": "20251122_053043",
+        "log": {
+            "version": 2,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = r.getField(0).asInstanceOf[java.sql.Date]; val cutoff = java.sql.Date.valueOf(\"1998-04-02\"); d != null && d.getTime < cutoff.getTime }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1).toString.toDouble; val ext = r.getField(2).toString.toDouble; val rf = r.getField(3).toString; val ls = r.getField(4).toString; ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Fixed the filter UDF to handle JDBC java.sql.Date properly by comparing timestamps (getTime) against cutoff date 1998-04-02. Previously it compared strings, which can be unsafe and not aligned with Wayang's JDBC Date handling guidance."
+            }
+        }
+    },
+    {
+        "id": 27,
+        "title": "Agent Usage: RefinerAgent. Refines version 2 information",
+        "timestamp": "20251122_053111",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 11401,
+                "input_tokens_details": {
+                    "cached_tokens": 10112
+                },
+                "output_tokens": 1923,
+                "output_tokens_details": {
+                    "reasoning_tokens": 960
+                },
+                "total_tokens": 13324
+            }
+        }
+    },
+    {
+        "id": 28,
+        "title": "Agent: RefinerAgent's plan: 2",
+        "timestamp": "20251122_053111",
+        "log": {
+            "version": 2,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val cutoff = java.sql.Date.valueOf(\"1998-04-02\"); val f = r.getField(0); if (f == null) false else f match { case d: java.sql.Date => d.before(cutoff) case ts: java.sql.Timestamp => new java.sql.Date(ts.getTime).before(cutoff) case s: String => try { java.sql.Date.valueOf(s.trim).before(cutoff) } catch { case _: Throwable => false } case _ => false } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Hardened the date filter to handle java.sql.Date, Timestamp, or String inputs safely; made numeric parsing robust for quantity and extended_price. Kept grouping, aggregations, and no ordering, with text output as requested."
+            }
+        }
+    },
+    {
+        "id": 29,
+        "title": "Class: PlanMapper Mapped Debug and Refined Plan",
+        "timestamp": "20251122_053111",
+        "log": {
+            "version": 2,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                            "columnNames": [
+                                "ship_date",
+                                "quantity",
+                                "extended_price",
+                                "return_flag",
+                                "line_status"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val cutoff = java.sql.Date.valueOf(\"1998-04-02\"); val f = r.getField(0); if (f == null) false else f match { case d: java.sql.Date => d.before(cutoff) case ts: java.sql.Timestamp => new java.sql.Date(ts.getTime).before(cutoff) case s: String => try { java.sql.Date.valueOf(s.trim).before(cutoff) } catch { case _: Throwable => false } case _ => false } }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053111.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 30,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_053111",
+        "log": ""
+    },
+    {
+        "id": 31,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053111",
+        "log": ""
+    },
+    {
+        "id": 32,
+        "title": "Err: Wayang error. Plan version 2 executed unsucessful",
+        "timestamp": "20251122_053111",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=20be85d8]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    },
+    {
+        "id": 33,
+        "title": "Class: PlanMapper Simplifies to JSON",
+        "timestamp": "20251122_053111",
+        "log": ""
+    },
+    {
+        "id": 34,
+        "title": "Agent Usage: DebuggerAgent. Debug version 3 information",
+        "timestamp": "20251122_053139",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 6540,
+                "input_tokens_details": {
+                    "cached_tokens": 3968
+                },
+                "output_tokens": 1687,
+                "output_tokens_details": {
+                    "reasoning_tokens": 768
+                },
+                "total_tokens": 8227
+            }
+        }
+    },
+    {
+        "id": 35,
+        "title": "Agent: DebuggerAgent's thoughts, plan 3",
+        "timestamp": "20251122_053139",
+        "log": {
+            "version": 3,
+            "thoughts": "Simplified the filter UDF to explicitly cast ship_date to java.sql.Date and compare via getTime against the cutoff (1998-04-02). This avoids pattern matching on multiple types and adheres to the guidance to compare JDBC dates via timestamps. Other operators unchanged."
+        }
+    },
+    {
+        "id": 36,
+        "title": "Agent: DebuggerAgent's plan: 3",
+        "timestamp": "20251122_053139",
+        "log": {
+            "version": 3,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = r.getField(0).asInstanceOf[java.sql.Date]; if (d == null) false else { val cutoff = java.sql.Date.valueOf(\"1998-04-02\"); d.getTime < cutoff.getTime } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Simplified the filter UDF to explicitly cast ship_date to java.sql.Date and compare via getTime against the cutoff (1998-04-02). This avoids pattern matching on multiple types and adheres to the guidance to compare JDBC dates via timestamps. Other operators unchanged."
+            }
+        }
+    },
+    {
+        "id": 37,
+        "title": "Agent Usage: RefinerAgent. Refines version 3 information",
+        "timestamp": "20251122_053206",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 12717,
+                "input_tokens_details": {
+                    "cached_tokens": 11392
+                },
+                "output_tokens": 1799,
+                "output_tokens_details": {
+                    "reasoning_tokens": 832
+                },
+                "total_tokens": 14516
+            }
+        }
+    },
+    {
+        "id": 38,
+        "title": "Agent: RefinerAgent's plan: 3",
+        "timestamp": "20251122_053206",
+        "log": {
+            "version": 3,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoff = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoff case ts: java.sql.Timestamp => ts.getTime < cutoff case s: String => try { java.sql.Date.valueOf(s).getTime < cutoff } catch { case _: Throwable => false } case _ => false } } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Validated DAG and operator arity. Hardened date filter to support java.sql.Date, java.sql.Timestamp, and String parsing against cutoff 1998-04-02. Kept grouping and aggregations minimal and aligned with the request; no sorting added; final output as text."
+            }
+        }
+    },
+    {
+        "id": 39,
+        "title": "Class: PlanMapper Mapped Debug and Refined Plan",
+        "timestamp": "20251122_053206",
+        "log": {
+            "version": 3,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                            "columnNames": [
+                                "ship_date",
+                                "quantity",
+                                "extended_price",
+                                "return_flag",
+                                "line_status"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoff = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoff case ts: java.sql.Timestamp => ts.getTime < cutoff case s: String => try { java.sql.Date.valueOf(s).getTime < cutoff } catch { case _: Throwable => false } case _ => false } } }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053206.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 40,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_053206",
+        "log": ""
+    },
+    {
+        "id": 41,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053206",
+        "log": ""
+    },
+    {
+        "id": 42,
+        "title": "Err: Wayang error. Plan version 3 executed unsucessful",
+        "timestamp": "20251122_053206",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=aff48f6]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    },
+    {
+        "id": 43,
+        "title": "Class: PlanMapper Simplifies to JSON",
+        "timestamp": "20251122_053206",
+        "log": ""
+    },
+    {
+        "id": 44,
+        "title": "Agent Usage: DebuggerAgent. Debug version 4 information",
+        "timestamp": "20251122_053235",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 9140,
+                "input_tokens_details": {
+                    "cached_tokens": 6528
+                },
+                "output_tokens": 1858,
+                "output_tokens_details": {
+                    "reasoning_tokens": 960
+                },
+                "total_tokens": 10998
+            }
+        }
+    },
+    {
+        "id": 45,
+        "title": "Agent: DebuggerAgent's thoughts, plan 4",
+        "timestamp": "20251122_053235",
+        "log": {
+            "version": 4,
+            "thoughts": "Adjusted only the filter UDF to compare java.sql.Date via getTime against the cutoff 1998-04-02, per Wayang JDBC date handling guidance. Rest of the plan kept unchanged and compliant with schema."
+        }
+    },
+    {
+        "id": 46,
+        "title": "Agent: DebuggerAgent's plan: 4",
+        "timestamp": "20251122_053235",
+        "log": {
+            "version": 4,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = r.getField(0).asInstanceOf[java.sql.Date]; d != null && d.getTime < java.sql.Date.valueOf(\"1998-04-02\").getTime }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Adjusted only the filter UDF to compare java.sql.Date via getTime against the cutoff 1998-04-02, per Wayang JDBC date handling guidance. Rest of the plan kept unchanged and compliant with schema."
+            }
+        }
+    },
+    {
+        "id": 47,
+        "title": "Agent Usage: RefinerAgent. Refines version 4 information",
+        "timestamp": "20251122_053303",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 14012,
+                "input_tokens_details": {
+                    "cached_tokens": 12672
+                },
+                "output_tokens": 2044,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 16056
+            }
+        }
+    },
+    {
+        "id": 48,
+        "title": "Agent: RefinerAgent's plan: 4",
+        "timestamp": "20251122_053303",
+        "log": {
+            "version": 4,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Hardened the date filter to support java.sql.Date, java.sql.Timestamp, and String inputs against the 1998-04-02 cutoff. Kept the rest of the plan minimal and aligned with the requested aggregations and text output without ordering."
+            }
+        }
+    },
+    {
+        "id": 49,
+        "title": "Class: PlanMapper Mapped Debug and Refined Plan",
+        "timestamp": "20251122_053303",
+        "log": {
+            "version": 4,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                            "columnNames": [
+                                "ship_date",
+                                "quantity",
+                                "extended_price",
+                                "return_flag",
+                                "line_status"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053303.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 50,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_053303",
+        "log": ""
+    },
+    {
+        "id": 51,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053303",
+        "log": ""
+    },
+    {
+        "id": 52,
+        "title": "Err: Wayang error. Plan version 4 executed unsucessful",
+        "timestamp": "20251122_053303",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=51959dec]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    },
+    {
+        "id": 53,
+        "title": "Class: PlanMapper Simplifies to JSON",
+        "timestamp": "20251122_053303",
+        "log": ""
+    },
+    {
+        "id": 54,
+        "title": "Agent Usage: DebuggerAgent. Debug version 5 information",
+        "timestamp": "20251122_053334",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 11713,
+                "input_tokens_details": {
+                    "cached_tokens": 9088
+                },
+                "output_tokens": 1969,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1024
+                },
+                "total_tokens": 13682
+            }
+        }
+    },
+    {
+        "id": 55,
+        "title": "Agent: DebuggerAgent's thoughts, plan 5",
+        "timestamp": "20251122_053334",
+        "log": {
+            "version": 5,
+            "thoughts": "Added explicit null check and trimmed String parsing in the filter UDF while keeping timestamp-based comparison. Other operators unchanged; IDs and connections are consistent."
+        }
+    },
+    {
+        "id": 56,
+        "title": "Agent: DebuggerAgent's plan: 5",
+        "timestamp": "20251122_053334",
+        "log": {
+            "version": 5,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s.trim).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Added explicit null check and trimmed String parsing in the filter UDF while keeping timestamp-based comparison. Other operators unchanged; IDs and connections are consistent."
+            }
+        }
+    },
+    {
+        "id": 57,
+        "title": "Agent Usage: RefinerAgent. Refines version 5 information",
+        "timestamp": "20251122_053352",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 15354,
+                "input_tokens_details": {
+                    "cached_tokens": 13952
+                },
+                "output_tokens": 1481,
+                "output_tokens_details": {
+                    "reasoning_tokens": 512
+                },
+                "total_tokens": 16835
+            }
+        }
+    },
+    {
+        "id": 58,
+        "title": "Agent: RefinerAgent's plan: 5",
+        "timestamp": "20251122_053352",
+        "log": {
+            "version": 5,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s.trim).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Validated DAG and UDFs. Filter now robustly compares ship_date against 1998-04-02 across Date/Timestamp/String inputs; grouping and aggregates compute sums, avgs, and counts as requested; no sorting added; output to text file retained."
+            }
+        }
+    },
+    {
+        "id": 59,
+        "title": "Class: PlanMapper Mapped Debug and Refined Plan",
+        "timestamp": "20251122_053352",
+        "log": {
+            "version": 5,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                            "columnNames": [
+                                "ship_date",
+                                "quantity",
+                                "extended_price",
+                                "return_flag",
+                                "line_status"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s.trim).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } } }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053352.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 60,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_053352",
+        "log": ""
+    },
+    {
+        "id": 61,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053352",
+        "log": ""
+    },
+    {
+        "id": 62,
+        "title": "Err: Wayang error. Plan version 5 executed unsucessful",
+        "timestamp": "20251122_053352",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=5aa59f14]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    },
+    {
+        "id": 63,
+        "title": "Class: PlanMapper Simplifies to JSON",
+        "timestamp": "20251122_053352",
+        "log": ""
+    },
+    {
+        "id": 64,
+        "title": "Agent Usage: DebuggerAgent. Debug version 6 information",
+        "timestamp": "20251122_053420",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 14344,
+                "input_tokens_details": {
+                    "cached_tokens": 11648
+                },
+                "output_tokens": 1986,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 16330
+            }
+        }
+    },
+    {
+        "id": 65,
+        "title": "Agent: DebuggerAgent's thoughts, plan 6",
+        "timestamp": "20251122_053420",
+        "log": {
+            "version": 6,
+            "thoughts": "Simplified the filter UDF to cast ship_date to java.sql.Date and compare via getTime against 1998-04-02, avoiding pattern matching that may cause runtime type issues. Other operators and connections unchanged."
+        }
+    },
+    {
+        "id": 66,
+        "title": "Agent: DebuggerAgent's plan: 6",
+        "timestamp": "20251122_053420",
+        "log": {
+            "version": 6,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = r.getField(0).asInstanceOf[java.sql.Date]; d != null && d.getTime < java.sql.Date.valueOf(\"1998-04-02\").getTime }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Simplified the filter UDF to cast ship_date to java.sql.Date and compare via getTime against 1998-04-02, avoiding pattern matching that may cause runtime type issues. Other operators and connections unchanged."
+            }
+        }
+    },
+    {
+        "id": 67,
+        "title": "Agent Usage: RefinerAgent. Refines version 6 information",
+        "timestamp": "20251122_053443",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 16649,
+                "input_tokens_details": {
+                    "cached_tokens": 15232
+                },
+                "output_tokens": 1811,
+                "output_tokens_details": {
+                    "reasoning_tokens": 832
+                },
+                "total_tokens": 18460
+            }
+        }
+    },
+    {
+        "id": 68,
+        "title": "Agent: RefinerAgent's plan: 6",
+        "timestamp": "20251122_053443",
+        "log": {
+            "version": 6,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "lineitem",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "ship_date",
+                            "quantity",
+                            "extended_price",
+                            "return_flag",
+                            "line_status"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s.trim).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } } }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                        "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Hardened the date filter to handle java.sql.Date, java.sql.Timestamp, and String values using timestamp comparison against 1998-04-02; rest of the plan already grouped by (return_flag, line_status) and computed sums, avgs, and count without sorting, then wrote to text output."
+            }
+        }
+    },
+    {
+        "id": 69,
+        "title": "Class: PlanMapper Mapped Debug and Refined Plan",
+        "timestamp": "20251122_053443",
+        "log": {
+            "version": 6,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ship_date, quantity, extended_price, return_flag, line_status FROM lineitem) as X",
+                            "columnNames": [
+                                "ship_date",
+                                "quantity",
+                                "extended_price",
+                                "return_flag",
+                                "line_status"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val v = r.getField(0); if (v == null) false else { val cutoffMs = java.sql.Date.valueOf(\"1998-04-02\").getTime; v match { case d: java.sql.Date => d.getTime < cutoffMs case ts: java.sql.Timestamp => ts.getTime < cutoffMs case s: String => try { java.sql.Date.valueOf(s.trim).getTime < cutoffMs } catch { case _: Throwable => false } case _ => false } } }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val qty = r.getField(1) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val ext = r.getField(2) match { case n: java.lang.Number => n.doubleValue() case s: String => s.toDouble case _ => 0.0 }; val rf = Option(r.getField(3)).map(_.toString).getOrElse(\"\"); val ls = Option(r.getField(4)).map(_.toString).getOrElse(\"\"); ((rf, ls), (qty, ext, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val sQty = a._2._1 + b._2._1; val sExt = a._2._2 + b._2._2; val cnt = a._2._3 + b._2._3; (a._1, (sQty, sExt, cnt)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val rf = t._1._1; val ls = t._1._2; val sumQ = t._2._1; val sumE = t._2._2; val cntL = t._2._3; val cnt = cntL.toDouble; val avgQ = if (cnt == 0) 0.0 else sumQ / cnt; val avgE = if (cnt == 0) 0.0 else sumE / cnt; s\"${rf}|${ls}|${sumQ}|${sumE}|${avgQ}|${avgE}|${cntL}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053443.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 70,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251122_053443",
+        "log": ""
+    },
+    {
+        "id": 71,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053443",
+        "log": ""
+    },
+    {
+        "id": 72,
+        "title": "Err: Wayang error. Plan version 6 executed unsucessful",
+        "timestamp": "20251122_053443",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=7917df33]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    },
+    {
+        "id": 73,
+        "title": "Final: Unsucessful. Plan executed unsucessful",
+        "timestamp": "20251122_053443",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[SqlToStream[convert out@PostgresTableSource[0->1, id=7917df33]]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: org.apache.wayang.core.api.exception.WayangException: Could not execute SQL.\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:173)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator.evaluate(SqlToStreamOperator.java:104)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\nCaused by: org.postgresql.util.PSQLException: ERROR: column \"ship_date\" does not exist\n  Hint: Perhaps you meant to reference the column \"lineitem.l_shipdate\".\n  Position: 23\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2725)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2412)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:371)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:502)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:419)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:341)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:326)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:302)\n\tat org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:251)\n\tat org.apache.wayang.jdbc.operators.SqlToStreamOperator$ResultSetIterator.<init>(SqlToStreamOperator.java:170)\n\t... 84 more\n"
+        }
+    }
+]

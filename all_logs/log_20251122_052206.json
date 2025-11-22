@@ -1,0 +1,892 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251122_052206",
+        "log": "Create a plan that summarizes all line items shipped before a cutoff date, defined as July 1st 1998 minus 90 days. The query must group the results by return flag and line status. For each group, calculate the total quantity, total extended price, average quantity, average extended price, and the number of rows. You don't need ordering or sortineg. The output must be in textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251122_052206",
+        "log": {
+            "model": "gpt-5-mini",
+            "architecture": "Multi",
+            "debugger": "True"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: SpecifierAgent Information",
+        "timestamp": "20251122_052211",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 377,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 313,
+                "output_tokens_details": {
+                    "reasoning_tokens": 192
+                },
+                "total_tokens": 690
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: SpecifierAgent Output",
+        "timestamp": "20251122_052211",
+        "log": "Create a plan to summarize all line items with shipdate before the cutoff date, where cutoff date = July 1, 1998 minus 90 days (i.e., 1998-04-02). Group the results by return flag and line status. For each group, compute:\n- total quantity (SUM(quantity))\n- total extended price (SUM(extended_price))\n- average quantity (AVG(quantity))\n- average extended price (AVG(extended_price))\n- number of rows (COUNT(*))\n\nDo not apply any ordering. Produce the output as a text file."
+    },
+    {
+        "id": 5,
+        "title": "Agent Usage: SelectorAgent Information",
+        "timestamp": "20251122_052216",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 943,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 298,
+                "output_tokens_details": {
+                    "reasoning_tokens": 192
+                },
+                "total_tokens": 1241
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Agent: SelectorAgent Output",
+        "timestamp": "20251122_052216",
+        "log": {
+            "tables": [
+                "lineitem"
+            ],
+            "textfiles": null,
+            "thoughts": "The request references line items shipped before a cutoff date and grouping by return flag and line status with aggregates on quantity and extended price. The required columns are typically in the 'lineitem' table: l_shipdate, l_returnflag, l_linestatus, l_quantity, l_extendedprice. Selecting 'lineitem' ensures all necessary fields are available for the cutoff-date filter and the requested aggregations."
+        }
+    },
+    {
+        "id": 7,
+        "title": "Agent Usage: DecomposerAgent Information",
+        "timestamp": "20251122_052225",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 3831,
+                "input_tokens_details": {
+                    "cached_tokens": 1792
+                },
+                "output_tokens": 564,
+                "output_tokens_details": {
+                    "reasoning_tokens": 128
+                },
+                "total_tokens": 4395
+            }
+        }
+    },
+    {
+        "id": 8,
+        "title": "Agent: DecomposerAgent Output",
+        "timestamp": "20251122_052225",
+        "log": {
+            "steps": [
+                {
+                    "step_id": 1,
+                    "transformation": "input-transformations",
+                    "depends_on": [],
+                    "detailed_description": "Load the 'lineitem' table (all columns) as the input dataset. This provides columns such as l_quantity, l_extendedprice, l_returnflag, l_linestatus, and l_shipdate which are required for downstream filtering, grouping, and aggregation."
+                },
+                {
+                    "step_id": 2,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        1
+                    ],
+                    "detailed_description": "Apply a filter to keep only rows with l_shipdate earlier than the cutoff date 1998-04-02 (i.e., l_shipdate < DATE '1998-04-02'). Then group the filtered rows by l_returnflag and l_linestatus and compute these aggregates for each group: total quantity = SUM(l_quantity), total extended price = SUM(l_extendedprice), average quantity = AVG(l_quantity), average extended price = AVG(l_extendedprice), and row count = COUNT(*). Input: full 'lineitem' table. Output: aggregated dataset with columns [l_returnflag, l_linestatus, sum_quantity, sum_extendedprice, avg_quantity, avg_extendedprice, count]. No ordering should be applied."
+                },
+                {
+                    "step_id": 3,
+                    "transformation": "output-transformations",
+                    "depends_on": [
+                        2
+                    ],
+                    "detailed_description": "Write the aggregated result (one row per combination of l_returnflag and l_linestatus with the computed aggregates) to a text file. Use a plain text output format (e.g., CSV or delimited text) as requested; do not apply any ordering before writing."
+                }
+            ],
+            "thoughts": "A simple three-step plan suffices: load the lineitem table, perform the filter + group + aggregations in one unary step, and write the aggregated result to a text file."
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: StepHandler created step dependencies and queue",
+        "timestamp": "20251122_052225",
+        "log": "Step queue [1, 2, 3]"
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: BuilderAgent Information step 1",
+        "timestamp": "20251122_052233",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 9619,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 563,
+                "output_tokens_details": {
+                    "reasoning_tokens": 320
+                },
+                "total_tokens": 10182
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: BuilderAgent Subplan for step 1",
+        "timestamp": "20251122_052233",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_linenumber",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_tax",
+                        "l_returnflag",
+                        "l_linestatus",
+                        "l_shipdate",
+                        "l_commitdate",
+                        "l_receiptdate",
+                        "l_shipinstruct",
+                        "l_shipmode",
+                        "l_comment"
+                    ]
+                }
+            ],
+            "thoughts": "Load the entire lineitem table (all columns) as a JDBC input so downstream steps can filter/group/aggregate on these fields."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent Usage: BuilderAgent Information step 2",
+        "timestamp": "20251122_052257",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 10104,
+                "input_tokens_details": {
+                    "cached_tokens": 9088
+                },
+                "output_tokens": 1920,
+                "output_tokens_details": {
+                    "reasoning_tokens": 896
+                },
+                "total_tokens": 12024
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Agent: BuilderAgent Subplan for step 2",
+        "timestamp": "20251122_052257",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_linenumber",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_tax",
+                        "l_returnflag",
+                        "l_linestatus",
+                        "l_shipdate",
+                        "l_commitdate",
+                        "l_receiptdate",
+                        "l_shipinstruct",
+                        "l_shipmode",
+                        "l_comment"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val d = r.getField(10).asInstanceOf[java.sql.Date]; d.before(java.sql.Date.valueOf(\"1998-04-02\")) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val rf = r.getField(8).toString; val ls = r.getField(9).toString; val qty = r.getField(4).asInstanceOf[Number].doubleValue(); val ext = r.getField(5).asInstanceOf[Number].doubleValue(); ((rf, ls), (qty, ext, 1.0)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Double))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Double)), b: ((String, String), (Double, Double, Double))) => (a._1, (a._2._1 + b._2._1, a._2._2 + b._2._2, a._2._3 + b._2._3))",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Double))) => { val key = t._1; val sums = t._2; val sum_qty = sums._1; val sum_ext = sums._2; val cnt = sums._3; val avg_qty = if (cnt == 0.0) 0.0 else sum_qty / cnt; val avg_ext = if (cnt == 0.0) 0.0 else sum_ext / cnt; (key._1, key._2, sum_qty, sum_ext, avg_qty, avg_ext, cnt.toLong) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Load full lineitem via JDBC, filter by shipdate < 1998-04-02 using Record, map to ((returnflag, linestatus),(qty,ext,1)), reduceBy to sum qty/ext and counts, then compute averages."
+        }
+    },
+    {
+        "id": 14,
+        "title": "Agent Usage: BuilderAgent Information step 3",
+        "timestamp": "20251122_052319",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 10496,
+                "input_tokens_details": {
+                    "cached_tokens": 9984
+                },
+                "output_tokens": 1677,
+                "output_tokens_details": {
+                    "reasoning_tokens": 512
+                },
+                "total_tokens": 12173
+            }
+        }
+    },
+    {
+        "id": 15,
+        "title": "Agent: BuilderAgent Subplan for step 3",
+        "timestamp": "20251122_052319",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_linenumber",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_tax",
+                        "l_returnflag",
+                        "l_linestatus",
+                        "l_shipdate",
+                        "l_commitdate",
+                        "l_receiptdate",
+                        "l_shipinstruct",
+                        "l_shipmode",
+                        "l_comment"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ship = r.getField(10); if (ship == null) false else { val shipDate = java.sql.Date.valueOf(ship.toString); shipDate.before(java.sql.Date.valueOf(\"1998-04-02\")) } }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val rf = r.getField(8).toString; val ls = r.getField(9).toString; val q = Option(r.getField(4)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); val ep = Option(r.getField(5)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); ((rf, ls), (q, ep, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val key = a._1; val as = a._2; val bs = b._2; (key, (as._1 + bs._1, as._2 + bs._2, as._3 + bs._3)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val key = t._1; val agg = t._2; val sumQ = agg._1; val sumEP = agg._2; val cnt = agg._3; val avgQ = if (cnt != 0) sumQ / cnt else 0.0; val avgEP = if (cnt != 0) sumEP / cnt else 0.0; (key._1, key._2, sumQ, sumEP, avgQ, avgEP, cnt) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Read lineitem, filter by shipdate < 1998-04-02, aggregate by (l_returnflag,l_linestatus) computing sums, averages and count, then output to text file."
+        }
+    },
+    {
+        "id": 16,
+        "title": "Class: StepHandler merged subplans to full plan",
+        "timestamp": "20251122_052319",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_linenumber",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_tax",
+                        "l_returnflag",
+                        "l_linestatus",
+                        "l_shipdate",
+                        "l_commitdate",
+                        "l_receiptdate",
+                        "l_shipinstruct",
+                        "l_shipmode",
+                        "l_comment"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ship = r.getField(10); if (ship == null) false else { val shipDate = java.sql.Date.valueOf(ship.toString); shipDate.before(java.sql.Date.valueOf(\"1998-04-02\")) } }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val rf = r.getField(8).toString; val ls = r.getField(9).toString; val q = Option(r.getField(4)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); val ep = Option(r.getField(5)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); ((rf, ls), (q, ep, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val key = a._1; val as = a._2; val bs = b._2; (key, (as._1 + bs._1, as._2 + bs._2, as._3 + bs._3)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val key = t._1; val agg = t._2; val sumQ = agg._1; val sumEP = agg._2; val cnt = agg._3; val avgQ = if (cnt != 0) sumQ / cnt else 0.0; val avgEP = if (cnt != 0) sumEP / cnt else 0.0; (key._1, key._2, sumQ, sumEP, avgQ, avgEP, cnt) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 17,
+        "title": "Agent Usage: RefinerAgent Information",
+        "timestamp": "20251122_052349",
+        "log": {
+            "model": "gpt-5-mini-2025-08-07",
+            "usage": {
+                "input_tokens": 10845,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 1603,
+                "output_tokens_details": {
+                    "reasoning_tokens": 384
+                },
+                "total_tokens": 12448
+            }
+        }
+    },
+    {
+        "id": 18,
+        "title": "Agent: RefinerAgent Output",
+        "timestamp": "20251122_052349",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "lineitem",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_linenumber",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_tax",
+                        "l_returnflag",
+                        "l_linestatus",
+                        "l_shipdate",
+                        "l_commitdate",
+                        "l_receiptdate",
+                        "l_shipinstruct",
+                        "l_shipmode",
+                        "l_comment"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ship = r.getField(10); if (ship == null) false else { val shipDate = java.sql.Date.valueOf(ship.toString); shipDate.before(java.sql.Date.valueOf(\"1998-04-02\")) } }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val rf = if (r.getField(8) == null) \"\" else r.getField(8).toString; val ls = if (r.getField(9) == null) \"\" else r.getField(9).toString; val q = Option(r.getField(4)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); val ep = Option(r.getField(5)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); ((rf, ls), (q, ep, 1L)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                    "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val key = a._1; val as = a._2; val bs = b._2; (key, (as._1 + bs._1, as._2 + bs._2, as._3 + bs._3)) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((String, String), (Double, Double, Long))) => { val key = t._1; val agg = t._2; val sumQ = agg._1; val sumEP = agg._2; val cnt = agg._3; val avgQ = if (cnt != 0) sumQ / cnt else 0.0; val avgEP = if (cnt != 0) sumEP / cnt else 0.0; s\"${key._1} | ${key._2} | ${sumQ} | ${sumEP} | ${avgQ} | ${avgEP} | ${cnt}\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Validated and kept the provided filter cutoff (1998-04-02). Ensured safe null handling for string and numeric fields, aggregated sums and counts via reduceBy, and computed averages in the final map; output serialized as text lines for textFileOutput."
+        }
+    },
+    {
+        "id": 19,
+        "title": "Class: PlanMapper Mapped the refined plan finalized for execution",
+        "timestamp": "20251122_052349",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT l_orderkey, l_partkey, l_suppkey, l_linenumber, l_quantity, l_extendedprice, l_discount, l_tax, l_returnflag, l_linestatus, l_shipdate, l_commitdate, l_receiptdate, l_shipinstruct, l_shipmode, l_comment FROM lineitem) as X",
+                            "columnNames": [
+                                "l_orderkey",
+                                "l_partkey",
+                                "l_suppkey",
+                                "l_linenumber",
+                                "l_quantity",
+                                "l_extendedprice",
+                                "l_discount",
+                                "l_tax",
+                                "l_returnflag",
+                                "l_linestatus",
+                                "l_shipdate",
+                                "l_commitdate",
+                                "l_receiptdate",
+                                "l_shipinstruct",
+                                "l_shipmode",
+                                "l_comment"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val ship = r.getField(10); if (ship == null) false else { val shipDate = java.sql.Date.valueOf(ship.toString); shipDate.before(java.sql.Date.valueOf(\"1998-04-02\")) } }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val rf = if (r.getField(8) == null) \"\" else r.getField(8).toString; val ls = if (r.getField(9) == null) \"\" else r.getField(9).toString; val q = Option(r.getField(4)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); val ep = Option(r.getField(5)).map{ v => v.asInstanceOf[Number].doubleValue() }.getOrElse(0.0); ((rf, ls), (q, ep, 1L)) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: ((String, String), (Double, Double, Long))) => t._1",
+                            "udf": "(a: ((String, String), (Double, Double, Long)), b: ((String, String), (Double, Double, Long))) => { val key = a._1; val as = a._2; val bs = b._2; (key, (as._1 + bs._1, as._2 + bs._2, as._3 + bs._3)) }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((String, String), (Double, Double, Long))) => { val key = t._1; val agg = t._2; val sumQ = agg._1; val sumEP = agg._2; val cnt = agg._3; val avgQ = if (cnt != 0) sumQ / cnt else 0.0; val avgEP = if (cnt != 0) sumEP / cnt else 0.0; s\"${key._1} | ${key._2} | ${sumQ} | ${sumEP} | ${avgQ} | ${avgEP} | ${cnt}\" }"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "output",
+                        "input": [
+                            5
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_052349.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 20,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251122_052349",
+        "log": ""
+    },
+    {
+        "id": 21,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_052411",
+        "log": ""
+    },
+    {
+        "id": 22,
+        "title": "Final: Sucessful. Plan executed",
+        "timestamp": "20251122_052411",
+        "log": "Success"
+    }
+]

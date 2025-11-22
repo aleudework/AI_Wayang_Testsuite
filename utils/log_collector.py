@@ -2,6 +2,7 @@ from pathlib import Path
 from pandas import DataFrame
 from typing import Tuple, Dict, List
 import pandas as pd
+import re
 import json
 from urllib.parse import urlparse
 
@@ -67,6 +68,7 @@ class LogCollector:
             total_reasoning_tokens = 0
             total_total_tokens = 0
             output_filepath = ""
+            null_value_filepath = ""
 
             agents = set()
             models = set()
@@ -139,6 +141,17 @@ class LogCollector:
                 else:
                     info["status"] = "Unsucessful"
 
+                # Text file error
+                if item["title"].startswith("Err: Wayang error"):
+                    output_text = item["log"]["output"]
+
+                    if "JavaTextFileSink" in output_text:
+                        match = re.search(r"file:///[^]\s)]+", output_text)
+                        if match:
+                            filepath = match.group(0)
+                            null_value_filepath = filepath
+
+
                 # Agent usage
                 if item["title"].startswith("Agent Usage:"):
 
@@ -208,6 +221,7 @@ class LogCollector:
             info["architecture2"] = architecture_name
             info["debugger2"] = debugger
             info["filepath"] = output_filepath
+            info["null_value_filepath"] = null_value_filepath
 
             return info, dataflow
 

@@ -1,0 +1,2475 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251120_174830",
+        "log": "Create a plan that loads waiting list data for the month \u201c2025-05\u201d, and only have waiting list type that contains the word \u201cAktiv\u201d, for these compute an contain the waiting list total for each organisation where the total is larger than 10000. For these organisations, the plan must get the total number of moveouts from 2025 and return the organisation name, the total in aktiv waiting list in 2025-05 and total of move outs in 2025. Output should be in textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251120_174830",
+        "log": {
+            "model": "gpt-5-nano",
+            "architecture": "Single",
+            "debugger": "True"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: BuilderAgent Information",
+        "timestamp": "20251120_174909",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 10580,
+                "input_tokens_details": {
+                    "cached_tokens": 10496
+                },
+                "output_tokens": 3894,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1792
+                },
+                "total_tokens": 14474
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: BuilderAgent Raw Plan",
+        "timestamp": "20251120_174909",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT organisation_id, year_month, waiting_list_type, total FROM factwaitinglists) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "year_month",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(6).toString; wt != null && wt.contains(\"Aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => (t._1, t._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 7,
+                    "input": [],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT organisation_id, move_out_year, sum_of_move_outs FROM factmoveouts) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "move_out_year",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 11,
+                    "input": [
+                        6,
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                    "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 13,
+                    "input": [],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT organisation_id, name FROM organisation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "name"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 14,
+                    "input": [
+                        12,
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                    "thatKeyUdf": "(r: (Int, String)) => r._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._3; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Loaded Aktiv waiting-list totals per organisation for 2025-05, joined with move-outs totals for 2025, and enriched with organisation names. The final dataset yields organisation name, Aktiv total for 2025-05, and 2025 moveouts total, then written to text file."
+        }
+    },
+    {
+        "id": 5,
+        "title": "Class: PlanMapper Mapped plan finalized for execution",
+        "timestamp": "20251120_174909",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/closed_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT organisation_id, year_month, waiting_list_type, total FROM (SELECT organisation_id, year_month, waiting_list_type, total FROM factwaitinglists) as X) as X",
+                            "columnNames": [
+                                "organisation_id",
+                                "year_month",
+                                "waiting_list_type",
+                                "total"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(6).toString; wt != null && wt.contains(\"Aktiv\") }"
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Int)) => t._1",
+                            "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: (Int, Int)) => t._2 > 10000"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "unary",
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Int, Int)) => (t._1, t._2)"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/closed_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT organisation_id, move_out_year, sum_of_move_outs FROM (SELECT organisation_id, move_out_year, sum_of_move_outs FROM factmoveouts) as X) as X",
+                            "columnNames": [
+                                "organisation_id",
+                                "move_out_year",
+                                "sum_of_move_outs"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Int)) => t._1",
+                            "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "binary",
+                        "input": [
+                            6,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                            "thatKeyUdf": "(t: (Int, Int)) => t._1"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/closed_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT organisation_id, name FROM (SELECT organisation_id, name FROM organisation) as X) as X",
+                            "columnNames": [
+                                "organisation_id",
+                                "name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "cat": "binary",
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                            "thatKeyUdf": "(r: (Int, String)) => r._1"
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "cat": "unary",
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._3; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "cat": "output",
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251120_174909.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251120_174909",
+        "log": ""
+    },
+    {
+        "id": 7,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251120_174910",
+        "log": ""
+    },
+    {
+        "id": 8,
+        "title": "Err: Wayang error. Plan executed unsucessful",
+        "timestamp": "20251120_174910",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaReduceBy[1->1, id=5194273d]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ArrayIndexOutOfBoundsException\n"
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251120_174910",
+        "log": ""
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: DebuggerAgent. Debug version 2 information",
+        "timestamp": "20251120_174940",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 6510,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 3256,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 9766
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: DebuggerAgent's thoughts, plan 2",
+        "timestamp": "20251120_174940",
+        "log": {
+            "version": 2,
+            "thoughts": "Fixed incorrect field index in Aktiv filter and corrected the final mapping to correctly compute aktivTotal from the awaiting total field and mv2025 from moveouts. This fixes the ArrayIndexOutOfBounds and ensures correct output values."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent: DebuggerAgent's plan: 2",
+        "timestamp": "20251120_174940",
+        "log": {
+            "version": 2,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factwaitinglists",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "year_month",
+                            "waiting_list_type",
+                            "total"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(2).toString; wt != null && wt.contains(\"Aktiv\") }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => t._2 > 10000",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => (t._1, t._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 7,
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factmoveouts",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "move_out_year",
+                            "sum_of_move_outs"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            6,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                        "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 13,
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "organisation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "name"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 14,
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                        "thatKeyUdf": "(r: (Int, String)) => r._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._2; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Fixed incorrect field index in Aktiv filter and corrected the final mapping to correctly compute aktivTotal from the awaiting total field and mv2025 from moveouts. This fixes the ArrayIndexOutOfBounds and ensures correct output values."
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251120_174940",
+        "log": ""
+    },
+    {
+        "id": 14,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251120_174940",
+        "log": ""
+    },
+    {
+        "id": 15,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251120_174941",
+        "log": ""
+    },
+    {
+        "id": 16,
+        "title": "Err: Wayang error. Plan version 2 executed unsucessful",
+        "timestamp": "20251120_174941",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=113fecfe]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class org.apache.wayang.basic.data.Record cannot be cast to class scala.Tuple2 (org.apache.wayang.basic.data.Record and scala.Tuple2 are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 17,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251120_174941",
+        "log": ""
+    },
+    {
+        "id": 18,
+        "title": "Agent Usage: DebuggerAgent. Debug version 3 information",
+        "timestamp": "20251120_175010",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 12982,
+                "input_tokens_details": {
+                    "cached_tokens": 6400
+                },
+                "output_tokens": 3076,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1600
+                },
+                "total_tokens": 16058
+            }
+        }
+    },
+    {
+        "id": 19,
+        "title": "Agent: DebuggerAgent's thoughts, plan 3",
+        "timestamp": "20251120_175010",
+        "log": {
+            "version": 3,
+            "thoughts": "Fixed join key types to align both inputs as (Int, Int) to avoid ClassCastException during join."
+        }
+    },
+    {
+        "id": 20,
+        "title": "Agent: DebuggerAgent's plan: 3",
+        "timestamp": "20251120_175010",
+        "log": {
+            "version": 3,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factwaitinglists",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "year_month",
+                            "waiting_list_type",
+                            "total"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(2).toString; wt != null && wt.contains(\"Aktiv\") }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => t._2 > 10000",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => (t._1, t._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 7,
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factmoveouts",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "move_out_year",
+                            "sum_of_move_outs"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            6,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                        "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 13,
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "organisation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "name"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 14,
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                        "thatKeyUdf": "(r: (Int, String)) => r._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._2; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Fixed join key types to align both inputs as (Int, Int) to avoid ClassCastException during join."
+            }
+        }
+    },
+    {
+        "id": 21,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251120_175010",
+        "log": ""
+    },
+    {
+        "id": 22,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251120_175010",
+        "log": ""
+    },
+    {
+        "id": 23,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251120_175012",
+        "log": ""
+    },
+    {
+        "id": 24,
+        "title": "Err: Wayang error. Plan version 3 executed unsucessful",
+        "timestamp": "20251120_175012",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=5802197]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class org.apache.wayang.basic.data.Record cannot be cast to class scala.Tuple2 (org.apache.wayang.basic.data.Record and scala.Tuple2 are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 25,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251120_175012",
+        "log": ""
+    },
+    {
+        "id": 26,
+        "title": "Agent Usage: DebuggerAgent. Debug version 4 information",
+        "timestamp": "20251120_175049",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 19432,
+                "input_tokens_details": {
+                    "cached_tokens": 12928
+                },
+                "output_tokens": 3809,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1664
+                },
+                "total_tokens": 23241
+            }
+        }
+    },
+    {
+        "id": 27,
+        "title": "Agent: DebuggerAgent's thoughts, plan 4",
+        "timestamp": "20251120_175049",
+        "log": {
+            "version": 4,
+            "thoughts": "Adjusted join key UDFs to accept Record inputs for the join to avoid class cast during key extraction."
+        }
+    },
+    {
+        "id": 28,
+        "title": "Agent: DebuggerAgent's plan: 4",
+        "timestamp": "20251120_175049",
+        "log": {
+            "version": 4,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factwaitinglists",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "year_month",
+                            "waiting_list_type",
+                            "total"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(2).toString; wt != null && wt.contains(\"Aktiv\") }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => t._2 > 10000",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => (t._1, t._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 7,
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factmoveouts",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "move_out_year",
+                            "sum_of_move_outs"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            6,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int)) => p._1",
+                        "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 13,
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "organisation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "name"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 14,
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                        "thatKeyUdf": "(r: (Int, String)) => r._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._2; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Adjusted join key UDFs to accept Record inputs for the join to avoid class cast during key extraction."
+            }
+        }
+    },
+    {
+        "id": 29,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251120_175049",
+        "log": ""
+    },
+    {
+        "id": 30,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251120_175049",
+        "log": ""
+    },
+    {
+        "id": 31,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251120_175051",
+        "log": ""
+    },
+    {
+        "id": 32,
+        "title": "Err: Wayang error. Plan version 4 executed unsucessful",
+        "timestamp": "20251120_175051",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=370006f9]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class org.apache.wayang.basic.data.Record cannot be cast to class scala.Tuple2 (org.apache.wayang.basic.data.Record and scala.Tuple2 are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 33,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251120_175051",
+        "log": ""
+    },
+    {
+        "id": 34,
+        "title": "Agent Usage: DebuggerAgent. Debug version 5 information",
+        "timestamp": "20251120_175124",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 25882,
+                "input_tokens_details": {
+                    "cached_tokens": 19328
+                },
+                "output_tokens": 3171,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1024
+                },
+                "total_tokens": 29053
+            }
+        }
+    },
+    {
+        "id": 35,
+        "title": "Agent: DebuggerAgent's thoughts, plan 5",
+        "timestamp": "20251120_175124",
+        "log": {
+            "version": 5,
+            "thoughts": "Plan fixed by adjusting join key UDFs to operate on Records (to avoid class cast during key extraction)."
+        }
+    },
+    {
+        "id": 36,
+        "title": "Agent: DebuggerAgent's plan: 5",
+        "timestamp": "20251120_175124",
+        "log": {
+            "version": 5,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factwaitinglists",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "year_month",
+                            "waiting_list_type",
+                            "total"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(2).toString; wt != null && wt.contains(\"Aktiv\") }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => t._2 > 10000",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => (t._1, t._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 7,
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factmoveouts",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "move_out_year",
+                            "sum_of_move_outs"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            6,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int)) => p._1",
+                        "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 13,
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "organisation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "name"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 14,
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                        "thatKeyUdf": "(r: (Int, String)) => r._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._2; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Plan fixed by adjusting join key UDFs to operate on Records (to avoid class cast during key extraction)."
+            }
+        }
+    },
+    {
+        "id": 37,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251120_175124",
+        "log": ""
+    },
+    {
+        "id": 38,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251120_175124",
+        "log": ""
+    },
+    {
+        "id": 39,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251120_175126",
+        "log": ""
+    },
+    {
+        "id": 40,
+        "title": "Err: Wayang error. Plan version 5 executed unsucessful",
+        "timestamp": "20251120_175126",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=61acc81]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class org.apache.wayang.basic.data.Record cannot be cast to class scala.Tuple2 (org.apache.wayang.basic.data.Record and scala.Tuple2 are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 41,
+        "title": "Class: PlanMapper Simplifies JSON",
+        "timestamp": "20251120_175126",
+        "log": ""
+    },
+    {
+        "id": 42,
+        "title": "Agent Usage: DebuggerAgent. Debug version 6 information",
+        "timestamp": "20251120_175156",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 32332,
+                "input_tokens_details": {
+                    "cached_tokens": 25728
+                },
+                "output_tokens": 2885,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1408
+                },
+                "total_tokens": 35217
+            }
+        }
+    },
+    {
+        "id": 43,
+        "title": "Agent: DebuggerAgent's thoughts, plan 6",
+        "timestamp": "20251120_175156",
+        "log": {
+            "version": 6,
+            "thoughts": "Plan fixed by adjusting join key UDFs to operate on Records (to avoid class cast during key extraction)."
+        }
+    },
+    {
+        "id": 44,
+        "title": "Agent: DebuggerAgent's plan: 6",
+        "timestamp": "20251120_175156",
+        "log": {
+            "version": 6,
+            "plan": {
+                "operations": [
+                    {
+                        "cat": "input",
+                        "id": 1,
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factwaitinglists",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "year_month",
+                            "waiting_list_type",
+                            "total"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 2,
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val wt = r.getField(2).toString; wt != null && wt.contains(\"Aktiv\") }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 3,
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val total = r.getField(3).asInstanceOf[Int]; (orgId, total) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 4,
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 5,
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => t._2 > 10000",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 6,
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: (Int, Int)) => (t._1, t._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 7,
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "factmoveouts",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "move_out_year",
+                            "sum_of_move_outs"
+                        ]
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 8,
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val year = r.getField(1).asInstanceOf[Int]; year == 2025 }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 9,
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(r: org.apache.wayang.basic.data.Record) => { val orgId = r.getField(0).asInstanceOf[Int]; val mv = r.getField(2).asInstanceOf[Int]; (orgId, mv) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 10,
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "keyUdf": "(t: (Int, Int)) => t._1",
+                        "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 11,
+                        "input": [
+                            6,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int)) => p._1",
+                        "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 12,
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "input",
+                        "id": 13,
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": "organisation",
+                        "inputFileName": null,
+                        "columnNames": [
+                            "organisation_id",
+                            "name"
+                        ]
+                    },
+                    {
+                        "cat": "binary",
+                        "id": 14,
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": "(p: (Int, Int, Int)) => p._1",
+                        "thatKeyUdf": "(r: (Int, String)) => r._1",
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "unary",
+                        "id": 15,
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "keyUdf": null,
+                        "udf": "(t: ((Int, Int, Int), (Int, String, Int))) => { val name = t._2._2; val aktivTotal = t._1._2; val mv2025 = t._1._3; (name, aktivTotal, mv2025) }",
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    },
+                    {
+                        "cat": "output",
+                        "id": 16,
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "keyUdf": null,
+                        "udf": null,
+                        "thisKeyUdf": null,
+                        "thatKeyUdf": null,
+                        "table": null,
+                        "inputFileName": null,
+                        "columnNames": []
+                    }
+                ],
+                "thoughts": "Plan fixed by adjusting join key UDFs to operate on Records (to avoid class cast during key extraction)."
+            }
+        }
+    },
+    {
+        "id": 45,
+        "title": "Class: PlanMapper Mapped Debug Plan",
+        "timestamp": "20251120_175156",
+        "log": ""
+    },
+    {
+        "id": 46,
+        "title": "Class: PlanValidator Validated Debugger Plan",
+        "timestamp": "20251120_175156",
+        "log": ""
+    },
+    {
+        "id": 47,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251120_175158",
+        "log": ""
+    },
+    {
+        "id": 48,
+        "title": "Err: Wayang error. Plan version 6 executed unsucessful",
+        "timestamp": "20251120_175158",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=535b3b76]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class org.apache.wayang.basic.data.Record cannot be cast to class scala.Tuple2 (org.apache.wayang.basic.data.Record and scala.Tuple2 are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    },
+    {
+        "id": 49,
+        "title": "Final: Unsucessful. Plan executed unsucessful",
+        "timestamp": "20251120_175158",
+        "log": {
+            "status_code": 400,
+            "output": "org.apache.wayang.core.api.exception.WayangException: Executing T[JavaJoin[2->1, id=535b3b76]] failed.\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:92)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:73)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.execute(PushExecutorTemplate.java:195)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.doExecute(PushExecutorTemplate.java:166)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate$StageExecution.executeStage(PushExecutorTemplate.java:156)\n\tat org.apache.wayang.core.platform.PushExecutorTemplate.execute(PushExecutorTemplate.java:61)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.execute(CrossPlatformExecutor.java:378)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeSingleStage(CrossPlatformExecutor.java:248)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.runToBreakpoint(CrossPlatformExecutor.java:320)\n\tat org.apache.wayang.core.platform.CrossPlatformExecutor.executeUntilBreakpoint(CrossPlatformExecutor.java:156)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:542)\n\tat org.apache.wayang.core.api.Job.doExecute(Job.java:326)\n\tat org.apache.wayang.core.util.OneTimeExecutable.tryExecute(OneTimeExecutable.java:41)\n\tat org.apache.wayang.core.util.OneTimeExecutable.execute(OneTimeExecutable.java:54)\n\tat org.apache.wayang.core.api.Job.execute(Job.java:245)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:124)\n\tat org.apache.wayang.core.api.WayangContext.execute(WayangContext.java:112)\n\tat org.apache.wayang.api.PlanBuilder.buildAndExecute(PlanBuilder.scala:107)\n\tat org.apache.wayang.api.DataQuanta.writeTextFileJava(DataQuanta.scala:1089)\n\tat org.apache.wayang.api.DataQuanta.writeTextFile(DataQuanta.scala:1027)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.visit(JsonPlanBuilder.scala:242)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\nCaused by: java.lang.ClassCastException: class org.apache.wayang.basic.data.Record cannot be cast to class scala.Tuple2 (org.apache.wayang.basic.data.Record and scala.Tuple2 are in unnamed module of loader org.codehaus.mojo.exec.URLClassLoaderBuilder$ExecJavaClassLoader @75d7297d)\n\tat org.apache.wayang.api.json.parserutil.SerializableLambda.apply(SerializableLambda.scala:38)\n\tat org.apache.wayang.api.package$$anon$1.apply(package.scala:65)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.lambda$evaluate$5(JavaJoinOperator.java:135)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)\n\tat java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)\n\tat java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1845)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)\n\tat org.apache.wayang.java.operators.JavaJoinOperator.evaluate(JavaJoinOperator.java:134)\n\tat org.apache.wayang.java.execution.JavaExecutor.execute(JavaExecutor.java:82)\n\t... 82 more\n"
+        }
+    }
+]

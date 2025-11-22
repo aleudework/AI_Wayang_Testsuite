@@ -1,0 +1,1612 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251122_053443",
+        "log": "Create a Wayang plan for a query that finds the top 3 highest-revenue orders for the market segment \u2018AUTOMOBILE\u2019. Revenue is defined as the sum of l_extendedprice * (1 - l_discount) per order. The system must join the customer, orders, and lineitem tables using c_custkey = o_custkey and l_orderkey = o_orderkey. Filter orders so that o_orderdate is earlier than 1995-03-15 and l_shipdate is later than 1995-03-15. Group the results by l_orderkey, o_orderdate, and o_shippriority. Then compute total revenue per order, and return only the first 3 rows. Output the result in a textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251122_053443",
+        "log": {
+            "model": "gpt-5-nano",
+            "architecture": "Multi",
+            "debugger": "False"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: SpecifierAgent Information",
+        "timestamp": "20251122_053447",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 445,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 405,
+                "output_tokens_details": {
+                    "reasoning_tokens": 192
+                },
+                "total_tokens": 850
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: SpecifierAgent Output",
+        "timestamp": "20251122_053447",
+        "log": "Create a Wayang plan to identify the top 3 highest-revenue orders for the market segment \"AUTOMOBILE\". Revenue per order is defined as the sum over items in the order of l_extendedprice * (1 - l_discount).\n\nPlan requirements:\n- Join the tables: customer (c), orders (o), and lineitem (l) using c_custkey = o_custkey and l_orderkey = o_orderkey.\n- Filter to include only customers with c_mktsegment = 'AUTOMOBILE'.\n- Filter orders and lineitems by date constraints: o_orderdate < '1995-03-15' and l_shipdate > '1995-03-15'.\n- Group results by l_orderkey, o_orderdate, and o_shippriority.\n- Compute total revenue per order as the sum of l_extendedprice * (1 - l_discount) within each group.\n- Return only the first 3 rows (top 3 by revenue).\n- Output the final result to a text file."
+    },
+    {
+        "id": 5,
+        "title": "Agent Usage: SelectorAgent Information",
+        "timestamp": "20251122_053451",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 1011,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 405,
+                "output_tokens_details": {
+                    "reasoning_tokens": 320
+                },
+                "total_tokens": 1416
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Agent: SelectorAgent Output",
+        "timestamp": "20251122_053451",
+        "log": {
+            "tables": [
+                "CUSTOMER",
+                "ORDERS",
+                "LINEITEM"
+            ],
+            "textfiles": null,
+            "thoughts": "Selected the core tables needed for join and filtration: CUSTOMER for c_custkey, ORDERS for o_custkey/o_orderkey and o_orderdate/o_shippriority, LINEITEM for l_orderkey, l_extendedprice, l_discount, l_shipdate."
+        }
+    },
+    {
+        "id": 7,
+        "title": "Agent Usage: DecomposerAgent Information",
+        "timestamp": "20251122_053502",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 3321,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 1231,
+                "output_tokens_details": {
+                    "reasoning_tokens": 704
+                },
+                "total_tokens": 4552
+            }
+        }
+    },
+    {
+        "id": 8,
+        "title": "Agent: DecomposerAgent Output",
+        "timestamp": "20251122_053502",
+        "log": {
+            "steps": [
+                {
+                    "step_id": 1,
+                    "transformation": "input-transformations",
+                    "depends_on": [],
+                    "detailed_description": "Load the customer (c), orders (o), and lineitem (l) tables as inputs. Each table provides its defined columns for subsequent joins and filtering."
+                },
+                {
+                    "step_id": 2,
+                    "transformation": "binary-transformations",
+                    "depends_on": [
+                        1
+                    ],
+                    "detailed_description": "Join the customer table with the orders table on c_custkey = o_custkey to produce a combined dataset containing customer and order information."
+                },
+                {
+                    "step_id": 3,
+                    "transformation": "binary-transformations",
+                    "depends_on": [
+                        2
+                    ],
+                    "detailed_description": "Join the result of (customer JOIN orders) with the lineitem table on o_orderkey = l_orderkey to include lineitem details for each order."
+                },
+                {
+                    "step_id": 4,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        3
+                    ],
+                    "detailed_description": "Apply filters: keep only rows where c_mktsegment = 'AUTOMOBILE', o_orderdate < '1995-03-15', and l_shipdate > '1995-03-15'. Input: joined dataset; Output: filtered dataset containing relevant orders and lineitems."
+                },
+                {
+                    "step_id": 5,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        4
+                    ],
+                    "detailed_description": "Group by l_orderkey, o_orderdate, and o_shippriority and compute total revenue per order as the sum over items of l_extendedprice * (1 - l_discount). Output: per-order revenue figures."
+                },
+                {
+                    "step_id": 6,
+                    "transformation": "output-transformations",
+                    "depends_on": [
+                        5
+                    ],
+                    "detailed_description": "Sort the per-order revenue results in descending order and return only the top 3 rows. Write the final top-3 results to a text file as the output."
+                }
+            ],
+            "thoughts": "We perform two joins to combine customer, orders, and lineitem, then apply market segment and date filters, aggregate revenue per order, and finally select the top 3 orders before writing to text output. This keeps the plan concise with 6 steps."
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: StepHandler created step dependencies and queue",
+        "timestamp": "20251122_053502",
+        "log": "Step queue [1, 2, 3, 4, 5, 6]"
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: BuilderAgent Information step 1",
+        "timestamp": "20251122_053515",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 8997,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 1552,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1152
+                },
+                "total_tokens": 10549
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: BuilderAgent Subplan for step 1",
+        "timestamp": "20251122_053515",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT id, name, email, address FROM customer_test) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "id",
+                        "name",
+                        "email",
+                        "address"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT id, customer_id, order_date FROM orders_test) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "id",
+                        "customer_id",
+                        "order_date"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT id, order_id, product_id, quantity FROM lineitem_test) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "id",
+                        "order_id",
+                        "product_id",
+                        "quantity"
+                    ]
+                }
+            ],
+            "thoughts": "Generated first-step inputs for customers, orders, and lineitem to feed downstream join/filters in subsequent steps."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent Usage: BuilderAgent Information step 2",
+        "timestamp": "20251122_053530",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 9364,
+                "input_tokens_details": {
+                    "cached_tokens": 8832
+                },
+                "output_tokens": 1855,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1408
+                },
+                "total_tokens": 11219
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Agent: BuilderAgent Subplan for step 2",
+        "timestamp": "20251122_053530",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                    "thatKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(1)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Created two JDBC input operators for customer and orders, then joined them on customer key fields. Assumed customer key is field 0 in customer records and customer key in orders is field 1 in orders records. No modifications to previous steps."
+        }
+    },
+    {
+        "id": 14,
+        "title": "Agent Usage: BuilderAgent Information step 3",
+        "timestamp": "20251122_053547",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 9733,
+                "input_tokens_details": {
+                    "cached_tokens": 9216
+                },
+                "output_tokens": 1788,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1344
+                },
+                "total_tokens": 11521
+            }
+        }
+    },
+    {
+        "id": 15,
+        "title": "Agent: BuilderAgent Subplan for step 3",
+        "timestamp": "20251122_053547",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": "(t: (Object, Object)) => 0",
+                    "udf": null,
+                    "thisKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                    "thatKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Created first two JDBC inputs for customer and orders, followed by a join placeholder. Used Record-based UDF placeholders compatible with JDBC inputs. Output IDs chained 1->2->3 with next output 4 for further steps."
+        }
+    },
+    {
+        "id": 16,
+        "title": "Agent Usage: BuilderAgent Information step 4",
+        "timestamp": "20251122_053612",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 10130,
+                "input_tokens_details": {
+                    "cached_tokens": 9600
+                },
+                "output_tokens": 2679,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1792
+                },
+                "total_tokens": 12809
+            }
+        }
+    },
+    {
+        "id": 17,
+        "title": "Agent: BuilderAgent Subplan for step 4",
+        "timestamp": "20251122_053612",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_name, c_mktsegment FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name",
+                        "c_mktsegment"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_partkey, l_suppkey, l_quantity FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_quantity"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 4,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, String, String)) => t._1",
+                    "thatKeyUdf": "(t: (Int, Int, String)) => t._2",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 5,
+                    "input": [
+                        4,
+                        3
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: ((Int, String, String), (Int, Int, String, Int))) => t._1._1",
+                    "thatKeyUdf": "(t: ((Int, String, String), (Int, Int, String, Int))) => t._2._0",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => true",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Constructed a basic 6-operator plan including 3 inputs (customers, orders, lineitem), two joins to combine data progressively, and a final filter as per the high-level step description. UDF specifics are placeholders to adhere to required shapes; JDBC inputs return Record in actual execution, so UDFs will adapt to access fields via r.getField(index) in final deployment."
+        }
+    },
+    {
+        "id": 18,
+        "title": "Agent Usage: BuilderAgent Information step 5",
+        "timestamp": "20251122_053637",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 10512,
+                "input_tokens_details": {
+                    "cached_tokens": 9984
+                },
+                "output_tokens": 2546,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1472
+                },
+                "total_tokens": 13058
+            }
+        }
+    },
+    {
+        "id": 19,
+        "title": "Agent: BuilderAgent Subplan for step 5",
+        "timestamp": "20251122_053637",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_name, c_mktsegment FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name",
+                        "c_mktsegment"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_orderkey, o_custkey, o_orderdate, o_shippriority FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate",
+                        "o_shippriority"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_extendedprice, l_discount FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_extendedprice",
+                        "l_discount"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 4,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(n: (Int, String, String)) => n._1",
+                    "thatKeyUdf": "(m: (Int, Int, String, String)) => m._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 5,
+                    "input": [
+                        4,
+                        3
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, String, String, Int, String)) => t._1",
+                    "thatKeyUdf": "(u: (Int, String, String, Int, String)) => u._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val oKey = r.getField(0).toString; val price = r.getField(4).toString.toDouble; val disc = r.getField(5).toString.toDouble; val revenue = price * (1.0 - disc); (oKey, revenue) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (String, Double)) => t._1",
+                    "udf": "(a: (String, Double), b: (String, Double)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 20,
+        "title": "Agent Usage: BuilderAgent Information step 6",
+        "timestamp": "20251122_053706",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 10883,
+                "input_tokens_details": {
+                    "cached_tokens": 10368
+                },
+                "output_tokens": 3243,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1792
+                },
+                "total_tokens": 14126
+            }
+        }
+    },
+    {
+        "id": 21,
+        "title": "Agent: BuilderAgent Subplan for step 6",
+        "timestamp": "20251122_053706",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_custkey, o_orderkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_custkey",
+                        "o_orderkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(c: org.apache.wayang.basic.data.Record) => c.getField(0)",
+                    "thatKeyUdf": "(o: org.apache.wayang.basic.data.Record) => o.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 5,
+                    "input": [
+                        4,
+                        3
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(l: org.apache.wayang.basic.data.Record) => l.getField(0)",
+                    "thatKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val c = r.getField(0).toString; val o = r.getField(1).toString; val l = r.getField(2).toString; c == \"AUTOMOBILE\" && o < \"1995-03-15\" && l > \"1995-03-15\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val c = r.getField(0).toString; val o = r.getField(1).toString; val l = r.getField(2).toString; (c, o, l) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "groupBy",
+                    "keyUdf": "(t: (String, String, String)) => t._1",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "reduce",
+                    "keyUdf": null,
+                    "udf": "(a: (String, String, String), b: (String, String, String)) => a",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Plan generated for a high-level multi-table join and filtering pipeline to align with the requested steps. JDBC inputs are used for all three tables and a sequence of joins, filters, and aggregations are chained, culminating in a top-3 sort/output step (represented here as an output placeholder)."
+        }
+    },
+    {
+        "id": 22,
+        "title": "Class: StepHandler merged subplans to full plan",
+        "timestamp": "20251122_053706",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_custkey, o_orderkey, o_orderdate FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_custkey",
+                        "o_orderkey",
+                        "o_orderdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(c: org.apache.wayang.basic.data.Record) => c.getField(0)",
+                    "thatKeyUdf": "(o: org.apache.wayang.basic.data.Record) => o.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 5,
+                    "input": [
+                        4,
+                        3
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(l: org.apache.wayang.basic.data.Record) => l.getField(0)",
+                    "thatKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val c = r.getField(0).toString; val o = r.getField(1).toString; val l = r.getField(2).toString; c == \"AUTOMOBILE\" && o < \"1995-03-15\" && l > \"1995-03-15\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val c = r.getField(0).toString; val o = r.getField(1).toString; val l = r.getField(2).toString; (c, o, l) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "groupBy",
+                    "keyUdf": "(t: (String, String, String)) => t._1",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "reduce",
+                    "keyUdf": null,
+                    "udf": "(a: (String, String, String), b: (String, String, String)) => a",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 23,
+        "title": "Agent Usage: RefinerAgent Information",
+        "timestamp": "20251122_053741",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 10586,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 4450,
+                "output_tokens_details": {
+                    "reasoning_tokens": 2624
+                },
+                "total_tokens": 15036
+            }
+        }
+    },
+    {
+        "id": 24,
+        "title": "Agent: RefinerAgent Output",
+        "timestamp": "20251122_053741",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT c_custkey, c_mktsegment, c_name FROM customer) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "c_custkey",
+                        "c_mktsegment",
+                        "c_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT o_custkey, o_orderkey, o_orderdate, o_shippriority FROM orders) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "o_custkey",
+                        "o_orderkey",
+                        "o_orderdate",
+                        "o_shippriority"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(c: org.apache.wayang.basic.data.Record) => c.getField(0)",
+                    "thatKeyUdf": "(o: org.apache.wayang.basic.data.Record) => o.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 4,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT l_orderkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "l_orderkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_shipdate"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 5,
+                    "input": [
+                        3,
+                        4
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(l: org.apache.wayang.basic.data.Record) => l.getField(0)",
+                    "thatKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { /* fields order after join: c_custkey, c_mktsegment, c_name, o_custkey, o_orderkey, o_orderdate, o_shippriority, l_orderkey, l_extendedprice, l_discount, l_shipdate */ val c = r.getField(0).toString; val mkt = r.getField(1).toString; val oDate = r.getField(5).toString; val shipPri = r.getField(6).toString; val lOrder = r.getField(7).toString; val lExtPrice = r.getField(8).asInstanceOf[Number].doubleValue(); val lDisc = r.getField(9).asInstanceOf[Number].doubleValue(); val lShip = r.getField(10).toString; val revenue = lExtPrice * (1.0 - lDisc); (lOrder, oDate = oDate, shipPri, revenue, lShip, mkt, c) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val mkt = r.getField(5).toString; val oDate = r.getField(1).toString; val lShip = r.getField(4).toString; mkt == \"AUTOMOBILE\" && oDate < \"1995-03-15\" && lShip > \"1995-03-15\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "groupBy",
+                    "keyUdf": "(t: (String, String, String, Double, String, String, String)) => t._1",
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "reduce",
+                    "keyUdf": null,
+                    "udf": "(a: (String, String, String, Double), b: (String, String, String, Double)) => (a._1, a._2, a._3, a._4 + b._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (String, String, String, Double)) => t._4 == t._4 ? t : t",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Refined plan to join customer, orders, and lineitem with correct market-segment and date filters, compute per-order revenue, group by order identifiers, and prepare for top-3 post-aggregation. Note: Extraction of the actual top-3 rows from the final reduced set would normally require a sort followed by a take/limit step which is not part of the provided operator set; this plan includes a final sort-indicative step and a placeholder handling for top-3 if a limit operator is available."
+        }
+    },
+    {
+        "id": 25,
+        "title": "Class: PlanMapper Mapped the refined plan finalized for execution",
+        "timestamp": "20251122_053741",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT c_custkey, c_mktsegment, c_name FROM (SELECT c_custkey, c_mktsegment, c_name FROM customer) as X) as X",
+                            "columnNames": [
+                                "c_custkey",
+                                "c_mktsegment",
+                                "c_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT o_custkey, o_orderkey, o_orderdate, o_shippriority FROM (SELECT o_custkey, o_orderkey, o_orderdate, o_shippriority FROM orders) as X) as X",
+                            "columnNames": [
+                                "o_custkey",
+                                "o_orderkey",
+                                "o_orderdate",
+                                "o_shippriority"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "binary",
+                        "input": [
+                            1,
+                            2
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(c: org.apache.wayang.basic.data.Record) => c.getField(0)",
+                            "thatKeyUdf": "(o: org.apache.wayang.basic.data.Record) => o.getField(0)"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT l_orderkey, l_extendedprice, l_discount, l_shipdate FROM (SELECT l_orderkey, l_extendedprice, l_discount, l_shipdate FROM lineitem) as X) as X",
+                            "columnNames": [
+                                "l_orderkey",
+                                "l_extendedprice",
+                                "l_discount",
+                                "l_shipdate"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "binary",
+                        "input": [
+                            3,
+                            4
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(l: org.apache.wayang.basic.data.Record) => l.getField(0)",
+                            "thatKeyUdf": "(r: org.apache.wayang.basic.data.Record) => r.getField(0)"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "unary",
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { /* fields order after join: c_custkey, c_mktsegment, c_name, o_custkey, o_orderkey, o_orderdate, o_shippriority, l_orderkey, l_extendedprice, l_discount, l_shipdate */ val c = r.getField(0).toString; val mkt = r.getField(1).toString; val oDate = r.getField(5).toString; val shipPri = r.getField(6).toString; val lOrder = r.getField(7).toString; val lExtPrice = r.getField(8).asInstanceOf[Number].doubleValue(); val lDisc = r.getField(9).asInstanceOf[Number].doubleValue(); val lShip = r.getField(10).toString; val revenue = lExtPrice * (1.0 - lDisc); (lOrder, oDate = oDate, shipPri, revenue, lShip, mkt, c) }"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val mkt = r.getField(5).toString; val oDate = r.getField(1).toString; val lShip = r.getField(4).toString; mkt == \"AUTOMOBILE\" && oDate < \"1995-03-15\" && lShip > \"1995-03-15\" }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "groupBy",
+                        "data": {
+                            "keyUdf": "(t: (String, String, String, Double, String, String, String)) => t._1"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduce",
+                        "data": {
+                            "keyUdf": "(_ : Any) => 1",
+                            "udf": "(a: (String, String, String, Double), b: (String, String, String, Double)) => (a._1, a._2, a._3, a._4 + b._4)"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (String, String, String, Double)) => t._4 == t._4 ? t : t"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "output",
+                        "input": [
+                            11
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251122_053741.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 26,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251122_053741",
+        "log": ""
+    },
+    {
+        "id": 27,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251122_053741",
+        "log": ""
+    },
+    {
+        "id": 28,
+        "title": "Err: Wayang error. Plan executed unsucessful",
+        "timestamp": "20251122_053741",
+        "log": {
+            "status_code": 400,
+            "output": "java.util.NoSuchElementException: key not found: 11\n\tat scala.collection.MapLike.default(MapLike.scala:236)\n\tat scala.collection.MapLike.default$(MapLike.scala:235)\n\tat scala.collection.AbstractMap.default(Map.scala:65)\n\tat scala.collection.MapLike.apply(MapLike.scala:144)\n\tat scala.collection.MapLike.apply$(MapLike.scala:143)\n\tat scala.collection.AbstractMap.apply(Map.scala:65)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\n"
+        }
+    },
+    {
+        "id": 29,
+        "title": "Final: Unsucessful. Plan executed unsucessful",
+        "timestamp": "20251122_053741",
+        "log": {
+            "status_code": 400,
+            "output": "java.util.NoSuchElementException: key not found: 11\n\tat scala.collection.MapLike.default(MapLike.scala:236)\n\tat scala.collection.MapLike.default$(MapLike.scala:235)\n\tat scala.collection.AbstractMap.default(Map.scala:65)\n\tat scala.collection.MapLike.apply(MapLike.scala:144)\n\tat scala.collection.MapLike.apply$(MapLike.scala:143)\n\tat scala.collection.AbstractMap.apply(Map.scala:65)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.executeRecursive(JsonPlanBuilder.scala:163)\n\tat org.apache.wayang.api.json.builder.JsonPlanBuilder.execute(JsonPlanBuilder.scala:150)\n\tat org.apache.wayang.api.json.Main$.$anonfun$jsonRoute$7(Main.scala:54)\n\tat zio.ZIOCompanionVersionSpecific.$anonfun$attempt$1(ZIOCompanionVersionSpecific.scala:100)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:904)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:890)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:967)\n\tat zio.internal.FiberRuntime.runLoop(FiberRuntime.scala:1024)\n\tat zio.internal.FiberRuntime.evaluateEffect(FiberRuntime.scala:381)\n\tat zio.internal.FiberRuntime.start(FiberRuntime.scala:1339)\n\tat zio.Runtime$UnsafeAPIV1.runOrFork(Runtime.scala:160)\n\tat zio.http.netty.NettyRuntime.run(NettyRuntime.scala:52)\n\tat zio.http.netty.NettyRuntime.run$(NettyRuntime.scala:29)\n\tat zio.http.netty.NettyRuntime$$anon$1.run(NettyRuntime.scala:105)\n\tat zio.http.netty.server.ServerInboundHandler.writeResponse(ServerInboundHandler.scala:300)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:96)\n\tat zio.http.netty.server.ServerInboundHandler.channelRead0(ServerInboundHandler.scala:42)\n\tat io.netty.channel.SimpleChannelInboundHandler.channelRead(SimpleChannelInboundHandler.java:99)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.flush.FlushConsolidationHandler.channelRead(FlushConsolidationHandler.java:152)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.ChannelInboundHandlerAdapter.channelRead(ChannelInboundHandlerAdapter.java:93)\n\tat io.netty.handler.codec.http.HttpServerKeepAliveHandler.channelRead(HttpServerKeepAliveHandler.java:64)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:442)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:346)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:318)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:833)\n"
+        }
+    }
+]

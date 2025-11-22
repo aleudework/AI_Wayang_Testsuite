@@ -1,0 +1,2818 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251121_012006",
+        "log": "Create a plan that loads waiting list data for the month \u201c2025-05\u201d, and only have waiting list type that contains the word \u201cAktiv\u201d, for these compute an contain the waiting list total for each organisation where the total is larger than 10000. For these organisations, the plan must get the total number of moveouts from 2025 and return the organisation name, the total in aktiv waiting list in 2025-05 and total of move outs in 2025. Output should be in textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251121_012006",
+        "log": {
+            "model": "gpt-5",
+            "architecture": "Multi",
+            "debugger": "True"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: SpecifierAgent Information",
+        "timestamp": "20251121_012014",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 399,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 493,
+                "output_tokens_details": {
+                    "reasoning_tokens": 320
+                },
+                "total_tokens": 892
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: SpecifierAgent Output",
+        "timestamp": "20251121_012014",
+        "log": "- Load the waiting list dataset.\n- Filter rows to month = \"2025-05\".\n- Filter rows where the waiting list type contains the substring \"Aktiv\" (case-insensitive).\n- Aggregate to compute the waiting list total per organisation for the filtered data.\n- Keep only organisations with waiting list total > 10000.\n- Load the moveouts dataset.\n- Filter moveouts to year = 2025.\n- Aggregate to compute the total number of moveouts per organisation for 2025.\n- Join the qualifying organisations (from the waiting list step) with the 2025 moveouts totals by organisation.\n- Select and output: organisation name, the waiting list total (Aktiv) for 2025-05, and the total moveouts for 2025.\n- Write the result to a text file."
+    },
+    {
+        "id": 5,
+        "title": "Agent Usage: SelectorAgent Information",
+        "timestamp": "20251121_012024",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 3195,
+                "input_tokens_details": {
+                    "cached_tokens": 3072
+                },
+                "output_tokens": 247,
+                "output_tokens_details": {
+                    "reasoning_tokens": 192
+                },
+                "total_tokens": 3442
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Agent: SelectorAgent Output",
+        "timestamp": "20251121_012024",
+        "log": {
+            "tables": [
+                "factwaitinglists",
+                "factmoveouts",
+                "organisation"
+            ],
+            "textfiles": null,
+            "thoughts": "Needed for filtering waiting lists by month and type, aggregating moveouts by year, and retrieving organisation names."
+        }
+    },
+    {
+        "id": 7,
+        "title": "Agent Usage: DecomposerAgent Information",
+        "timestamp": "20251121_012057",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 4076,
+                "input_tokens_details": {
+                    "cached_tokens": 2688
+                },
+                "output_tokens": 1754,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 5830
+            }
+        }
+    },
+    {
+        "id": 8,
+        "title": "Agent: DecomposerAgent Output",
+        "timestamp": "20251121_012057",
+        "log": {
+            "steps": [
+                {
+                    "step_id": 1,
+                    "transformation": "input-transformations",
+                    "depends_on": [],
+                    "detailed_description": "Load the following JDBC tables as inputs: factwaitinglists (columns: waitinglist_id, organisation_id, year_month, year, month, date, waiting_list_type, total), factmoveouts (columns: moveout_id, organisation_id, department_id, tenancy_types_id, move_out_year, years_lived, sum_of_move_outs), and organisation (columns: organisation_id, organisation_no, active_organisation, name, social_housing_org, municipality)."
+                },
+                {
+                    "step_id": 2,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        1
+                    ],
+                    "detailed_description": "Create two prepared datasets. (A) From factwaitinglists: filter rows where year_month equals \"2025-05\" and waiting_list_type contains substring \"Aktiv\" case-insensitively; then aggregate by organisation_id computing waiting_list_total_2025_05_aktiv = SUM(total); then keep only groups with waiting_list_total_2025_05_aktiv > 10000. Output A: qualifying_waitlist_by_org(organisation_id, waiting_list_total_2025_05_aktiv). (B) From factmoveouts: filter rows where move_out_year = 2025; then aggregate by organisation_id computing moveouts_total_2025 = SUM(sum_of_move_outs). Output B: moveouts_2025_by_org(organisation_id, moveouts_total_2025)."
+                },
+                {
+                    "step_id": 3,
+                    "transformation": "binary-transformations",
+                    "depends_on": [
+                        2
+                    ],
+                    "detailed_description": "Inner join the two prepared datasets from Step 2 on organisation_id: qualifying_waitlist_by_org \u22c8 moveouts_2025_by_org. Input: Output A and Output B from Step 2. Output: joined_org_metrics(organisation_id, waiting_list_total_2025_05_aktiv, moveouts_total_2025)."
+                },
+                {
+                    "step_id": 4,
+                    "transformation": "binary-transformations",
+                    "depends_on": [
+                        1,
+                        3
+                    ],
+                    "detailed_description": "Join joined_org_metrics with organisation (from Step 1) on organisation.organisation_id = joined_org_metrics.organisation_id to bring the organisation name. Output: joined_with_names(organisation_id, organisation_name = organisation.name, waiting_list_total_2025_05_aktiv, moveouts_total_2025)."
+                },
+                {
+                    "step_id": 5,
+                    "transformation": "unary-transformations",
+                    "depends_on": [
+                        4
+                    ],
+                    "detailed_description": "Project and order columns as required for final output: select organisation_name, waiting_list_total_2025_05_aktiv, moveouts_total_2025. Input: joined_with_names. Output: final_result(organisation_name, waiting_list_total_2025_05_aktiv, moveouts_total_2025)."
+                },
+                {
+                    "step_id": 6,
+                    "transformation": "output-transformations",
+                    "depends_on": [
+                        5
+                    ],
+                    "detailed_description": "Write final_result to a text file as the final output."
+                }
+            ],
+            "thoughts": "Three tables are needed. We prepare two aggregated datasets (waiting list filtered/aggregated and moveouts for 2025), join them by organisation, enrich with organisation name, project required columns, and write to text."
+        }
+    },
+    {
+        "id": 9,
+        "title": "Class: StepHandler created step dependencies and queue",
+        "timestamp": "20251121_012057",
+        "log": "Step queue [1, 2, 3, 4, 5, 6]"
+    },
+    {
+        "id": 10,
+        "title": "Agent Usage: BuilderAgent Information step 1",
+        "timestamp": "20251121_012118",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 9855,
+                "input_tokens_details": {
+                    "cached_tokens": 9472
+                },
+                "output_tokens": 1067,
+                "output_tokens_details": {
+                    "reasoning_tokens": 768
+                },
+                "total_tokens": 10922
+            }
+        }
+    },
+    {
+        "id": 11,
+        "title": "Agent: BuilderAgent Subplan for step 1",
+        "timestamp": "20251121_012118",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                }
+            ],
+            "thoughts": "Initialized three JDBC inputs for the required tables with correct columns and sequential IDs, leaving outputs open for downstream steps to connect."
+        }
+    },
+    {
+        "id": 12,
+        "title": "Agent Usage: BuilderAgent Information step 2",
+        "timestamp": "20251121_012202",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 10359,
+                "input_tokens_details": {
+                    "cached_tokens": 9728
+                },
+                "output_tokens": 2468,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1472
+                },
+                "total_tokens": 12827
+            }
+        }
+    },
+    {
+        "id": 13,
+        "title": "Agent: BuilderAgent Subplan for step 2",
+        "timestamp": "20251121_012202",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(2).toString == \"2025-05\" && r.getField(6).toString.toLowerCase.contains(\"aktiv\")",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 6,
+                    "input": [],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 10,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                }
+            ],
+            "thoughts": "Loaded three JDBC sources (waitinglists, moveouts, organisation). Built branch A: filter by 2025-05 and Aktiv, aggregate totals by organisation, then filter >10000. Built branch B: filter moveouts for 2025 and aggregate totals by organisation. Left organisation input ready for future joins."
+        }
+    },
+    {
+        "id": 14,
+        "title": "Agent Usage: BuilderAgent Information step 3",
+        "timestamp": "20251121_012309",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 10766,
+                "input_tokens_details": {
+                    "cached_tokens": 10240
+                },
+                "output_tokens": 3245,
+                "output_tokens_details": {
+                    "reasoning_tokens": 2048
+                },
+                "total_tokens": 14011
+            }
+        }
+    },
+    {
+        "id": 15,
+        "title": "Agent: BuilderAgent Subplan for step 3",
+        "timestamp": "20251121_012309",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = r.getField(2).toString; val wlt = r.getField(6).toString.toLowerCase; ym == \"2025-05\" && wlt.contains(\"aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 6,
+                    "input": [],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 10,
+                    "input": [
+                        5,
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(a: (Int, Int)) => a._1",
+                    "thatKeyUdf": "(b: (Int, Int)) => b._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => { val org = t._1._1; val wait = t._1._2; val mo = t._2._2; (org, wait, mo) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 12,
+                    "input": [],
+                    "output": [],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                }
+            ],
+            "thoughts": "Loaded all required JDBC tables (step 1). Built A and B via filters, maps, reduceBy, and filter (step 2). Performed inner join on organisation_id and reshaped to requested fields (step 3). Organisation input kept available for future steps."
+        }
+    },
+    {
+        "id": 16,
+        "title": "Agent Usage: BuilderAgent Information step 4",
+        "timestamp": "20251121_012521",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 11172,
+                "input_tokens_details": {
+                    "cached_tokens": 10752
+                },
+                "output_tokens": 4484,
+                "output_tokens_details": {
+                    "reasoning_tokens": 3008
+                },
+                "total_tokens": 15656
+            }
+        }
+    },
+    {
+        "id": 17,
+        "title": "Agent: BuilderAgent Subplan for step 4",
+        "timestamp": "20251121_012521",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = Option(r.getField(2)).map(_.toString).getOrElse(\"\"); val wlt = Option(r.getField(6)).map(_.toString).getOrElse(\"\").toLowerCase; ym == \"2025-05\" && wlt.contains(\"aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 6,
+                    "input": [],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 12,
+                    "input": [
+                        5,
+                        9
+                    ],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(a: (Int, Int)) => a._1",
+                    "thatKeyUdf": "(b: (Int, Int)) => b._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 13,
+                    "input": [
+                        12
+                    ],
+                    "output": [
+                        18
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => { val a = t._1; val b = t._2; (a._1, a._2, b._2) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 10,
+                    "input": [],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        18
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(3).toString)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 18,
+                    "input": [
+                        13,
+                        11
+                    ],
+                    "output": [
+                        19
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(m: (Int, Int, Int)) => m._1",
+                    "thatKeyUdf": "(o: (Int, String)) => o._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 19,
+                    "input": [
+                        18
+                    ],
+                    "output": [],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String))) => { val m = t._1; val o = t._2; (m._1, o._2, m._2, m._3) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Loaded three JDBC tables, prepared two aggregated datasets with filters and reduceBy, joined them on organisation_id, then joined with organisation names and reshaped the final output."
+        }
+    },
+    {
+        "id": 18,
+        "title": "Agent Usage: BuilderAgent Information step 5",
+        "timestamp": "20251121_012620",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 11576,
+                "input_tokens_details": {
+                    "cached_tokens": 11136
+                },
+                "output_tokens": 3596,
+                "output_tokens_details": {
+                    "reasoning_tokens": 2048
+                },
+                "total_tokens": 15172
+            }
+        }
+    },
+    {
+        "id": 19,
+        "title": "Agent: BuilderAgent Subplan for step 5",
+        "timestamp": "20251121_012620",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 2,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = r.getField(2).toString; val t = r.getField(6).toString.toLowerCase; ym == \"2025-05\" && t.contains(\"aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 6,
+                    "input": [],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 10,
+                    "input": [
+                        5,
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                    "thatKeyUdf": "(t: (Int, Int)) => t._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => (t._1._1, t._1._2, t._2._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 12,
+                    "input": [],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 13,
+                    "input": [
+                        12
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(3).toString)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 14,
+                    "input": [
+                        11,
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int, Int)) => t._1",
+                    "thatKeyUdf": "(t: (Int, String)) => t._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String))) => (t._1._1, t._2._2, t._1._2, t._1._3)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, String, Int, Int)) => (t._2, t._3, t._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Loaded three JDBC sources (step 1), prepared A and B via filters and ReduceBy (step 2), joined them (step 3), enriched with organisation names (step 4), then projected required columns (step 5). IDs are continuous and inputs/outputs connect properly."
+        }
+    },
+    {
+        "id": 20,
+        "title": "Agent Usage: BuilderAgent Information step 6",
+        "timestamp": "20251121_012746",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 11926,
+                "input_tokens_details": {
+                    "cached_tokens": 11520
+                },
+                "output_tokens": 4189,
+                "output_tokens_details": {
+                    "reasoning_tokens": 2496
+                },
+                "total_tokens": 16115
+            }
+        }
+    },
+    {
+        "id": 21,
+        "title": "Agent: BuilderAgent Subplan for step 6",
+        "timestamp": "20251121_012746",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = r.getField(2).toString; val wlt = r.getField(6).toString; ym == \"2025-05\" && wlt.toLowerCase.contains(\"aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 11,
+                    "input": [
+                        7,
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                    "thatKeyUdf": "(u: (Int, Int)) => u._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => (t._1._1, t._1._2, t._2._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 13,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(3).toString)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 14,
+                    "input": [
+                        12,
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(m: (Int, Int, Int)) => m._1",
+                    "thatKeyUdf": "(o: (Int, String)) => o._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String))) => (t._1._1, t._2._2, t._1._2, t._1._3)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [
+                        17
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, String, Int, Int)) => (t._2, t._3, t._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 17,
+                    "input": [
+                        16
+                    ],
+                    "output": [
+                        18
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (String, Int, Int)) => s\"${t._1} | ${t._2} | ${t._3}\"",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 18,
+                    "input": [
+                        17
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Loaded three JDBC tables, prepared two aggregated datasets with filters and sums, joined them by organisation_id, enriched with organisation names, projected required fields, formatted lines, and added final text output. IDs are continuous and inputs/outputs are linked correctly."
+        }
+    },
+    {
+        "id": 22,
+        "title": "Class: StepHandler merged subplans to full plan",
+        "timestamp": "20251121_012746",
+        "log": {
+            "operations": [
+                {
+                    "cat": "unary",
+                    "id": 19,
+                    "input": [
+                        18
+                    ],
+                    "output": [],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String))) => { val m = t._1; val o = t._2; (m._1, o._2, m._2, m._3) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = r.getField(2).toString; val wlt = r.getField(6).toString; ym == \"2025-05\" && wlt.toLowerCase.contains(\"aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 11,
+                    "input": [
+                        7,
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                    "thatKeyUdf": "(u: (Int, Int)) => u._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => (t._1._1, t._1._2, t._2._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 13,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(3).toString)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 14,
+                    "input": [
+                        12,
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(m: (Int, Int, Int)) => m._1",
+                    "thatKeyUdf": "(o: (Int, String)) => o._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String))) => (t._1._1, t._2._2, t._1._2, t._1._3)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [
+                        17
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, String, Int, Int)) => (t._2, t._3, t._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 17,
+                    "input": [
+                        16
+                    ],
+                    "output": [
+                        18
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (String, Int, Int)) => s\"${t._1} | ${t._2} | ${t._3}\"",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 18,
+                    "input": [
+                        17
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": ""
+        }
+    },
+    {
+        "id": 23,
+        "title": "Agent Usage: RefinerAgent Information",
+        "timestamp": "20251121_012838",
+        "log": {
+            "model": "gpt-5-2025-08-07",
+            "usage": {
+                "input_tokens": 12526,
+                "input_tokens_details": {
+                    "cached_tokens": 9728
+                },
+                "output_tokens": 2793,
+                "output_tokens_details": {
+                    "reasoning_tokens": 1088
+                },
+                "total_tokens": 15319
+            }
+        }
+    },
+    {
+        "id": 24,
+        "title": "Agent: RefinerAgent Output",
+        "timestamp": "20251121_012838",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factwaitinglists",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "waitinglist_id",
+                        "organisation_id",
+                        "year_month",
+                        "year",
+                        "month",
+                        "date",
+                        "waiting_list_type",
+                        "total"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "factmoveouts",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "moveout_id",
+                        "organisation_id",
+                        "department_id",
+                        "tenancy_types_id",
+                        "move_out_year",
+                        "years_lived",
+                        "sum_of_move_outs"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 3,
+                    "input": [],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "organisation",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "organisation_id",
+                        "organisation_no",
+                        "active_organisation",
+                        "name",
+                        "social_housing_org",
+                        "municipality"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        1
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = r.getField(2).toString; val wlt = r.getField(6).toString; ym == \"2025-05\" && wlt.toLowerCase.contains(\"aktiv\") }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 5,
+                    "input": [
+                        4
+                    ],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, Int)) => t._2 > 10000",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        2
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Int)) => t._1",
+                    "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 11,
+                    "input": [
+                        7,
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                    "thatKeyUdf": "(u: (Int, Int)) => u._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int), (Int, Int))) => (t._1._1, t._1._2, t._2._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 13,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(3).toString)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "binary",
+                    "id": 14,
+                    "input": [
+                        12,
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(m: (Int, Int, Int)) => m._1",
+                    "thatKeyUdf": "(o: (Int, String)) => o._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Int, Int), (Int, String))) => (t._1._1, t._2._2, t._1._2, t._1._3)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [
+                        17
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (Int, String, Int, Int)) => (t._2, t._3, t._4)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 17,
+                    "input": [
+                        16
+                    ],
+                    "output": [
+                        18
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (String, Int, Int)) => s\"${t._1} | ${t._2} | ${t._3}\"",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 18,
+                    "input": [
+                        17
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Removed a dangling map operator after the output (id 19) that broke DAG validity. Verified joins and field indices, ensured filtering and aggregations match the request, and kept only necessary operators to output organisation name, Aktiv waiting list total for 2025-05, and 2025 moveouts."
+        }
+    },
+    {
+        "id": 25,
+        "title": "Class: PlanMapper Mapped the refined plan finalized for execution",
+        "timestamp": "20251121_012838",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/closed_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT waitinglist_id, organisation_id, year_month, year, month, date, waiting_list_type, total FROM factwaitinglists) as X",
+                            "columnNames": [
+                                "waitinglist_id",
+                                "organisation_id",
+                                "year_month",
+                                "year",
+                                "month",
+                                "date",
+                                "waiting_list_type",
+                                "total"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/closed_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT moveout_id, organisation_id, department_id, tenancy_types_id, move_out_year, years_lived, sum_of_move_outs FROM factmoveouts) as X",
+                            "columnNames": [
+                                "moveout_id",
+                                "organisation_id",
+                                "department_id",
+                                "tenancy_types_id",
+                                "move_out_year",
+                                "years_lived",
+                                "sum_of_move_outs"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/closed_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT organisation_id, organisation_no, active_organisation, name, social_housing_org, municipality FROM organisation) as X",
+                            "columnNames": [
+                                "organisation_id",
+                                "organisation_no",
+                                "active_organisation",
+                                "name",
+                                "social_housing_org",
+                                "municipality"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            1
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => { val ym = r.getField(2).toString; val wlt = r.getField(6).toString; ym == \"2025-05\" && wlt.toLowerCase.contains(\"aktiv\") }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "unary",
+                        "input": [
+                            4
+                        ],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(7).asInstanceOf[Int])"
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "unary",
+                        "input": [
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Int)) => t._1",
+                            "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: (Int, Int)) => t._2 > 10000"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            2
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => r.getField(4).asInstanceOf[Int] == 2025"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(1).asInstanceOf[Int], r.getField(6).asInstanceOf[Int])"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "unary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Int)) => t._1",
+                            "udf": "(a: (Int, Int), b: (Int, Int)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "binary",
+                        "input": [
+                            7,
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, Int)) => t._1",
+                            "thatKeyUdf": "(u: (Int, Int)) => u._1"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Int), (Int, Int))) => (t._1._1, t._1._2, t._2._2)"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(r: org.apache.wayang.basic.data.Record) => (r.getField(0).asInstanceOf[Int], r.getField(3).toString)"
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "cat": "binary",
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(m: (Int, Int, Int)) => m._1",
+                            "thatKeyUdf": "(o: (Int, String)) => o._1"
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "cat": "unary",
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Int, Int), (Int, String))) => (t._1._1, t._2._2, t._1._2, t._1._3)"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "cat": "unary",
+                        "input": [
+                            15
+                        ],
+                        "output": [
+                            17
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (Int, String, Int, Int)) => (t._2, t._3, t._4)"
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "cat": "unary",
+                        "input": [
+                            16
+                        ],
+                        "output": [
+                            18
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (String, Int, Int)) => s\"${t._1} | ${t._2} | ${t._3}\""
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "cat": "output",
+                        "input": [
+                            17
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_012838.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 26,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251121_012838",
+        "log": ""
+    },
+    {
+        "id": 27,
+        "title": "Wayang: Wayang plan sent to Wayang",
+        "timestamp": "20251121_012841",
+        "log": ""
+    },
+    {
+        "id": 28,
+        "title": "Final: Sucessful. Plan executed",
+        "timestamp": "20251121_012841",
+        "log": "Success"
+    }
+]

@@ -182,6 +182,7 @@ class Tester:
             "total_netto_input_tokens": info["total_netto_input_tokens"],
             "log_path": log_path,
             "filepath": filepath,
+            "null_value_file_path": info["null_value_filepath"]
         }
 
         return dictionary

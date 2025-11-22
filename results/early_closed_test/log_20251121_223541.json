@@ -1,0 +1,638 @@
+[
+    {
+        "id": 1,
+        "title": "User query: Plan description from client LLM",
+        "timestamp": "20251121_223541",
+        "log": "Identify all parts supplied by suppliers located in Germany whose individual stock value exceeds 0.0001 of the total stock value of all German suppliers. The stock value of each part is defined as ps_supplycost * ps_availqty. Use only suppliers from the nation \u2018GERMANY\u2019, compute the total stock value for Germany, and return only those parts whose value is greater than 0.0001 of that total. Output in Textfile."
+    },
+    {
+        "id": 2,
+        "title": "Architecture",
+        "timestamp": "20251121_223541",
+        "log": {
+            "model": "gpt-5-nano",
+            "architecture": "Single",
+            "debugger": "False"
+        }
+    },
+    {
+        "id": 3,
+        "title": "Agent Usage: BuilderAgent Information",
+        "timestamp": "20251121_223642",
+        "log": {
+            "model": "gpt-5-nano-2025-08-07",
+            "usage": {
+                "input_tokens": 11224,
+                "input_tokens_details": {
+                    "cached_tokens": 0
+                },
+                "output_tokens": 5230,
+                "output_tokens_details": {
+                    "reasoning_tokens": 3136
+                },
+                "total_tokens": 16454
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Agent: BuilderAgent Raw Plan",
+        "timestamp": "20251121_223642",
+        "log": {
+            "operations": [
+                {
+                    "cat": "input",
+                    "id": 1,
+                    "input": [],
+                    "output": [
+                        2
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT n_nationkey, n_name FROM nation) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "n_nationkey",
+                        "n_name"
+                    ]
+                },
+                {
+                    "cat": "input",
+                    "id": 2,
+                    "input": [],
+                    "output": [
+                        3
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT s_suppkey, s_nationkey FROM supplier) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "s_suppkey",
+                        "s_nationkey"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 3,
+                    "input": [
+                        1,
+                        2
+                    ],
+                    "output": [
+                        4
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(p: (Integer, Integer)) => p._2",
+                    "thatKeyUdf": "(n: (Integer, String)) => n._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 4,
+                    "input": [
+                        3
+                    ],
+                    "output": [
+                        5
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: ((Integer, Integer), (Integer, String))) => { return t._2._2 == \"GERMANY\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 5,
+                    "input": [],
+                    "output": [
+                        6
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "ps_partkey",
+                        "ps_suppkey",
+                        "ps_availqty",
+                        "ps_supplycost"
+                    ]
+                },
+                {
+                    "cat": "unary",
+                    "id": 6,
+                    "input": [
+                        4,
+                        5
+                    ],
+                    "output": [
+                        7
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: ((Integer, Integer), (Integer, String))) => t._1._1",
+                    "thatKeyUdf": "(p: (Integer, Integer, Integer, Double)) => p._2",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 7,
+                    "input": [
+                        6
+                    ],
+                    "output": [
+                        8
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (((Integer, Integer), (Integer, String)), (Integer, Integer, Integer, Double))) => { val part = t._2._0; val stock = t._2._2 * t._2._3; (part, stock) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 8,
+                    "input": [
+                        7
+                    ],
+                    "output": [
+                        9
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: (String, Double)) => (1, t._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 9,
+                    "input": [
+                        8
+                    ],
+                    "output": [
+                        10
+                    ],
+                    "operatorName": "reduceBy",
+                    "keyUdf": "(t: (Int, Double)) => t._1",
+                    "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 10,
+                    "input": [
+                        9
+                    ],
+                    "output": [
+                        11
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                    "thatKeyUdf": "(p: (Int, Double)) => p._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 11,
+                    "input": [
+                        10
+                    ],
+                    "output": [
+                        12
+                    ],
+                    "operatorName": "filter",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Double), (Int, Double))) => { val total = t._1._2; val stock = t._2._2; stock > 0.0001 * total }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 12,
+                    "input": [
+                        11
+                    ],
+                    "output": [
+                        13
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Int, Double), (Int, Double))) => { val part = t._2._1; val stock = t._2._2; (part, stock) }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "input",
+                    "id": 13,
+                    "input": [],
+                    "output": [
+                        14
+                    ],
+                    "operatorName": "jdbcRemoteInput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": "(SELECT p_partkey, p_name FROM part) as X",
+                    "inputFileName": null,
+                    "columnNames": [
+                        "p_partkey",
+                        "p_name"
+                    ]
+                },
+                {
+                    "cat": "binary",
+                    "id": 14,
+                    "input": [
+                        12,
+                        13
+                    ],
+                    "output": [
+                        15
+                    ],
+                    "operatorName": "join",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": "(t: (Integer, Double)) => t._1",
+                    "thatKeyUdf": "(p: (Integer, String)) => p._1",
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "unary",
+                    "id": 15,
+                    "input": [
+                        14
+                    ],
+                    "output": [
+                        16
+                    ],
+                    "operatorName": "map",
+                    "keyUdf": null,
+                    "udf": "(t: ((Integer, String), (Integer, String))) => { val partKey = t._1._1; val partName = t._2._2; val stock = t._1._2; s\"${partKey} | ${partName} | ${stock}\" }",
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                },
+                {
+                    "cat": "output",
+                    "id": 16,
+                    "input": [
+                        15
+                    ],
+                    "output": [],
+                    "operatorName": "textFileOutput",
+                    "keyUdf": null,
+                    "udf": null,
+                    "thisKeyUdf": null,
+                    "thatKeyUdf": null,
+                    "table": null,
+                    "inputFileName": null,
+                    "columnNames": []
+                }
+            ],
+            "thoughts": "Constructed a plan that filters German suppliers, computes per-part stock value from partsupp, aggregates total German stock, and selects parts whose stock value exceeds 0.0001 of the total. The result is output to a text file with part key, name, and stock value."
+        }
+    },
+    {
+        "id": 5,
+        "title": "Class: PlanMapper Mapped plan finalized for execution",
+        "timestamp": "20251121_223642",
+        "log": {
+            "version": 1,
+            "plan": {
+                "context": {
+                    "platforms": [
+                        "java"
+                    ],
+                    "configuration": {}
+                },
+                "operators": [
+                    {
+                        "id": 1,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            2
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT n_nationkey, n_name FROM (SELECT n_nationkey, n_name FROM nation) as X) as X",
+                            "columnNames": [
+                                "n_nationkey",
+                                "n_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            3
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT s_suppkey, s_nationkey FROM (SELECT s_suppkey, s_nationkey FROM supplier) as X) as X",
+                            "columnNames": [
+                                "s_suppkey",
+                                "s_nationkey"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "cat": "binary",
+                        "input": [
+                            1,
+                            2
+                        ],
+                        "output": [
+                            4
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(p: (Integer, Integer)) => p._2",
+                            "thatKeyUdf": "(n: (Integer, String)) => n._1"
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "cat": "unary",
+                        "input": [
+                            3
+                        ],
+                        "output": [
+                            5
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Integer, Integer), (Integer, String))) => { return t._2._2 == \"GERMANY\" }"
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            6
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM (SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost FROM partsupp) as X) as X",
+                            "columnNames": [
+                                "ps_partkey",
+                                "ps_suppkey",
+                                "ps_availqty",
+                                "ps_supplycost"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "cat": "binary",
+                        "input": [
+                            4,
+                            5
+                        ],
+                        "output": [
+                            7
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: ((Integer, Integer), (Integer, String))) => t._1._1",
+                            "thatKeyUdf": "(p: (Integer, Integer, Integer, Double)) => p._2"
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "cat": "unary",
+                        "input": [
+                            6
+                        ],
+                        "output": [
+                            8
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (((Integer, Integer), (Integer, String)), (Integer, Integer, Integer, Double))) => { val part = t._2._0; val stock = t._2._2 * t._2._3; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "cat": "unary",
+                        "input": [
+                            7
+                        ],
+                        "output": [
+                            9
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: (String, Double)) => (1, t._2)"
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "cat": "unary",
+                        "input": [
+                            8
+                        ],
+                        "output": [
+                            10
+                        ],
+                        "operatorName": "reduceBy",
+                        "data": {
+                            "keyUdf": "(t: (Int, Double)) => t._1",
+                            "udf": "(a: (Int, Double), b: (Int, Double)) => (a._1, a._2 + b._2)"
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "cat": "binary",
+                        "input": [
+                            9
+                        ],
+                        "output": [
+                            11
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Int, Double)) => t._1",
+                            "thatKeyUdf": "(p: (Int, Double)) => p._1"
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "cat": "unary",
+                        "input": [
+                            10
+                        ],
+                        "output": [
+                            12
+                        ],
+                        "operatorName": "filter",
+                        "data": {
+                            "udf": "(t: ((Int, Double), (Int, Double))) => { val total = t._1._2; val stock = t._2._2; stock > 0.0001 * total }"
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "cat": "unary",
+                        "input": [
+                            11
+                        ],
+                        "output": [
+                            13
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Int, Double), (Int, Double))) => { val part = t._2._1; val stock = t._2._2; (part, stock) }"
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "cat": "input",
+                        "input": [],
+                        "output": [
+                            14
+                        ],
+                        "operatorName": "jdbcRemoteInput",
+                        "data": {
+                            "uri": "jdbc:postgresql://localhost:5432/open_source_db",
+                            "username": "master_thesis",
+                            "password": "master",
+                            "table": "(SELECT p_partkey, p_name FROM (SELECT p_partkey, p_name FROM part) as X) as X",
+                            "columnNames": [
+                                "p_partkey",
+                                "p_name"
+                            ]
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "cat": "binary",
+                        "input": [
+                            12,
+                            13
+                        ],
+                        "output": [
+                            15
+                        ],
+                        "operatorName": "join",
+                        "data": {
+                            "thisKeyUdf": "(t: (Integer, Double)) => t._1",
+                            "thatKeyUdf": "(p: (Integer, String)) => p._1"
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "cat": "unary",
+                        "input": [
+                            14
+                        ],
+                        "output": [
+                            16
+                        ],
+                        "operatorName": "map",
+                        "data": {
+                            "udf": "(t: ((Integer, String), (Integer, String))) => { val partKey = t._1._1; val partName = t._2._2; val stock = t._1._2; s\"${partKey} | ${partName} | ${stock}\" }"
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "cat": "output",
+                        "input": [
+                            15
+                        ],
+                        "output": [],
+                        "operatorName": "textFileOutput",
+                        "data": {
+                            "filename": "file:///Users/alexander/Wayang_Data/Output/output_20251121_223642.txt"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": 6,
+        "title": "Class: PlanValidator Validates Plan",
+        "timestamp": "20251121_223642",
+        "log": ""
+    },
+    {
+        "id": 7,
+        "title": "Err: PlanValidator Val error. Failed validation",
+        "timestamp": "20251121_223642",
+        "log": {
+            "version": 1,
+            "errors": [
+                "Operation id 10: Binary operators must have two input ids"
+            ]
+        }
+    },
+    {
+        "id": 8,
+        "title": "Final: Unsucessful. Plan executed unsucessful",
+        "timestamp": "20251121_223642",
+        "log": {
+            "status_code": 400,
+            "output": null
+        }
+    }
+]
